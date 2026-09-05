@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0e1720">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ARIA">
+<link rel="manifest" href="manifest.webmanifest">\n<script src="./cloud-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./cloud-sync.js"></script>
+<title>ARIA — دستیار شخصی</title>
+<style>
+:root{
+ --bg:#0b1117;--panel:#111a22;--panel2:#17232d;--line:#273643;--text:#f3f7f9;--muted:#95a8b4;
+ --accent:#2dd4bf;--accent2:#4f7cff;--ok:#42d392;--warn:#ffbd4a;--bad:#ff6b7a;--violet:#9b7cff;
+ --pink:#ff78b8;--orange:#ff8d5c;--cyan:#41d7ff;--lime:#9bda63;--gold:#ffd166;
+ --shadow:0 12px 36px rgba(0,0,0,.25)
+}
+*{box-sizing:border-box}html,body{margin:0;background:linear-gradient(180deg,#0a1016,#0c141b);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,sans-serif}
+button,input,textarea,select{font:inherit}.app{max-width:1280px;margin:auto;min-height:100vh;padding:env(safe-area-inset-top) 12px calc(env(safe-area-inset-bottom) + 76px)}
+header{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,rgba(10,16,22,.98),rgba(10,16,22,.90),transparent);padding:12px 0}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px}.brand b{font-size:22px;letter-spacing:1px}.brand span{display:block;color:var(--muted);font-size:12px}
+button,.btn{border:0;border-radius:13px;padding:10px 13px;color:var(--text);background:var(--panel2)}button:active{transform:scale(.98)}.primary{background:linear-gradient(135deg,var(--accent2),var(--accent));font-weight:800}.ghost{background:transparent;border:1px solid var(--line)}.danger{background:#472529;color:#ffd8d8}
+.layout{display:grid;grid-template-columns:250px 1fr;gap:12px}.card{background:rgba(17,26,34,.96);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}.side{padding:10px;height:max-content;position:sticky;top:90px}
+.sideTitle{font-weight:800;font-size:13px;color:#d5e2e8;margin:8px 7px}.nav{display:grid;gap:6px}.nav button{text-align:right;background:#0d151c;position:relative;overflow:hidden}
+.nav button::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;margin-left:8px;background:linear-gradient(135deg,var(--cyan),var(--violet))}
+.nav button:nth-child(2)::before{background:linear-gradient(135deg,var(--pink),var(--orange))}
+.nav button:nth-child(3)::before{background:linear-gradient(135deg,var(--gold),var(--orange))}
+.nav button:nth-child(4)::before{background:linear-gradient(135deg,var(--cyan),var(--accent2))}
+.nav button:nth-child(5)::before{background:linear-gradient(135deg,var(--violet),var(--pink))}
+.nav button:nth-child(6)::before{background:linear-gradient(135deg,var(--lime),var(--accent))}
+.nav button:nth-child(7)::before{background:linear-gradient(135deg,var(--muted),var(--accent2))}
+.nav button.active{outline:2px solid var(--accent);background:linear-gradient(135deg,#162934,#1b2239)}.main{display:grid;gap:12px}
+.hero{padding:16px}.heroTop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.hero h2{margin:0;font-size:20px}.sub{color:var(--muted);font-size:12px;margin-top:4px}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:14px}.stat{background:linear-gradient(145deg,#101922,#13222c);border-radius:14px;padding:10px;text-align:center;border:1px solid rgba(255,255,255,.04)}
+.stat:nth-child(1){box-shadow:inset 0 2px 0 rgba(65,215,255,.45)}
+.stat:nth-child(2){box-shadow:inset 0 2px 0 rgba(255,107,122,.45)}
+.stat:nth-child(3){box-shadow:inset 0 2px 0 rgba(255,189,74,.45)}
+.stat:nth-child(4){box-shadow:inset 0 2px 0 rgba(155,124,255,.45)}
+.stat:nth-child(5){box-shadow:inset 0 2px 0 rgba(66,211,146,.45)}.stat b{display:block;font-size:21px}.stat span{font-size:11px;color:var(--muted)}
+.quick{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px}.quick button{font-size:12px;padding:8px 10px}
+.section{padding:14px}.sectionHead{display:flex;justify-content:space-between;align-items:center}.sectionHead b{font-size:15px}
+.taskList{display:grid;gap:8px;margin-top:10px}.task{background:#0d151c;border:1px solid var(--line);border-radius:14px;padding:11px}.task.overdue{border-color:#7d3336;background:#1d1215}.task.done{opacity:.55}.taskTop{display:flex;gap:8px;align-items:flex-start}.check{width:24px;height:24px;border-radius:8px;border:1px solid var(--line);display:grid;place-items:center;cursor:pointer}.taskTitle{font-weight:800;flex:1}.meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}.badge{font-size:10px;padding:4px 7px;border-radius:999px;background:#21303b}.green{background:#163b2a;color:#caffdc}.yellow{background:#47381b;color:#ffe5a1}.red{background:#4a2225;color:#ffc9c9}.violet{background:#2c2850;color:#ded7ff}.desc{font-size:12px;color:#c4d1d8;margin-top:8px;white-space:pre-wrap}.subtasks{margin-top:8px;display:grid;gap:5px}.subtask{font-size:12px;color:#c7d3da}.actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.actions button{font-size:11px;padding:7px 9px}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.projectGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:10px}.project{padding:14px;border-radius:16px;background:linear-gradient(145deg,#0f1820,#15222d);border:1px solid var(--line);cursor:pointer;position:relative;overflow:hidden}
+.project::after{content:"";position:absolute;left:-24px;top:-28px;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle,rgba(65,215,255,.22),transparent 70%)}
+.project:nth-child(2n)::after{background:radial-gradient(circle,rgba(155,124,255,.22),transparent 70%)}
+.project:nth-child(3n)::after{background:radial-gradient(circle,rgba(255,120,184,.20),transparent 70%)}.project b{display:block}.project small{color:var(--muted)}
+.musicCards{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:10px}.musicCard{border-radius:16px;padding:14px;border:1px solid var(--line);background:linear-gradient(145deg,#16192c,#121c25)}
+.musicCard:nth-child(1){box-shadow:inset 0 2px 0 rgba(155,124,255,.55)}
+.musicCard:nth-child(2){box-shadow:inset 0 2px 0 rgba(255,120,184,.55)}
+.musicCard:nth-child(3){box-shadow:inset 0 2px 0 rgba(65,215,255,.55)}
+.bottom{display:none}
+dialog{border:0;border-radius:18px;background:#131d25;color:var(--text);width:min(720px,95vw);max-height:90vh;overflow:auto;box-shadow:0 30px 90px #0009}dialog::backdrop{background:#000a}
+form{display:grid;gap:10px}label{display:grid;gap:6px;font-size:12px;color:#d0dce2}input,textarea,select{width:100%;border:1px solid var(--line);border-radius:11px;padding:11px;background:#0d151c;color:var(--text)}textarea{min-height:88px;resize:vertical}.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.row3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.modalActions{display:flex;gap:8px;justify-content:flex-end}.canvasWrap{background:#fff;border-radius:12px;overflow:hidden;border:1px solid var(--line)}canvas{display:block;width:100%;height:210px;touch-action:none}
+.attachments{display:flex;gap:8px;flex-wrap:wrap}.attachment{font-size:11px;padding:7px 9px;background:#0c151b;border-radius:9px}
+.search{width:100%;margin:8px 0}
+.focusCard{padding:20px;text-align:center}.focusTimer{font-size:48px;font-weight:900;margin:14px 0}.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:10px}.day{min-height:84px;padding:7px;background:#0d151c;border-radius:10px;border:1px solid var(--line);font-size:11px}.day b{display:block;margin-bottom:4px}.dot{height:5px;border-radius:10px;background:var(--accent);margin:3px 0}
+@media(max-width:850px){.layout{grid-template-columns:1fr}.side{display:none}.stats{grid-template-columns:repeat(3,1fr)}.grid2,.projectGrid,.musicCards{grid-template-columns:1fr}.bottom{display:grid;position:fixed;bottom:0;left:0;right:0;z-index:40;grid-template-columns:repeat(5,1fr);background:rgba(10,16,22,.96);border-top:1px solid var(--line);padding:7px 6px calc(7px + env(safe-area-inset-bottom));backdrop-filter:blur(12px)}.bottom button{padding:8px 4px;font-size:10px;background:transparent}}
+
+.iosDock{background:rgba(15,22,31,.88)!important;backdrop-filter:blur(24px) saturate(1.35);-webkit-backdrop-filter:blur(24px) saturate(1.35);border-top:1px solid rgba(255,255,255,.12)!important;box-shadow:0 -10px 28px rgba(0,0,0,.28)}
+.dockItem{display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:transparent!important;padding:5px 2px!important}.dockItem small{font-size:9.5px;color:#afbdc7;font-weight:700}.iosIcon{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;color:#fff;font-size:20px;font-weight:850;box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 5px 14px rgba(0,0,0,.27)}.iosIcon.home{background:linear-gradient(145deg,#55b8ff,#3468ff)}.iosIcon.folder{background:linear-gradient(145deg,#ffd45a,#ff9a26)}.iosIcon.music{background:linear-gradient(145deg,#b778ff,#ff68b0)}.iosIcon.cal{background:linear-gradient(145deg,#ff726d,#ff365f);font-size:14px}.iosIcon.add{background:linear-gradient(145deg,#35dbc4,#249eff)}.dockItem.active .iosIcon{transform:translateY(-3px) scale(1.06);box-shadow:0 7px 20px rgba(70,183,255,.25),inset 0 1px 0 rgba(255,255,255,.4)}.dockItem.active small{color:#fff}
+.jcal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}.jweek{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:8px}.jweek span{text-align:center;color:var(--muted);font-size:11px}.jday{min-height:54px;border:1px solid var(--line);border-radius:12px;background:#0d151c;padding:7px;cursor:pointer}.jday.today{outline:2px solid var(--accent)}.jday.has{box-shadow:inset 0 -4px 0 var(--accent)}.jday.empty{visibility:hidden}.jday b{display:block;font-size:13px}.jday small{color:var(--muted);font-size:9px}.calHead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+ <div class="top">
+  <div class="brand"><b style="background:linear-gradient(90deg,#41d7ff,#2dd4bf,#9b7cff,#ff78b8);-webkit-background-clip:text;color:transparent">ARIA</b><span id="todayLabel">دستیار شخصی</span></div>
+  <div style="display:flex;gap:8px;align-items:center"><span id="cloudStatus" class="badge yellow">☁️ در حال بررسی...</span><button id="accountBtn" class="ghost" type="button">حساب</button><button class="primary" id="addTaskBtn">＋ کار جدید</button></div>
+ </div>
+</header>
+
+<div class="layout">
+<aside class="card side">
+ <div class="sideTitle">دستیار</div>
+ <div class="nav" id="sideNav">
+  <button data-view="today" class="active">امروز</button>
+  <button data-view="inbox">ورودی‌ها</button>
+  <button data-view="projects">پروژه‌ها</button>
+  <button data-view="calendar">تقویم</button>
+  <button data-view="music">موسیقی</button>
+  <button data-view="focus">تمرکز</button>
+  <button data-view="archive">آرشیو</button>
+ </div>
+ <div class="sideTitle">جستجو</div>
+ <input id="search" class="search" placeholder="جستجو...">
+ <div class="sideTitle">ابزار</div>
+ <div class="nav">
+  <button id="backupBtn">بکاپ</button>
+  <label class="btn" style="cursor:pointer;text-align:center">بازیابی<input id="restoreInput" type="file" hidden accept="application/json"></label>
+  <button id="notifyBtn">اعلان‌ها</button>
+ </div>
+</aside>
+
+<main class="main" id="main"></main>
+</div>
+</div>
+
+<nav class="bottom iosDock">
+<button data-view="today" class="dockItem"><span class="iosIcon home">⌂</span><small>امروز</small></button>
+<button data-view="projects" class="dockItem"><span class="iosIcon folder">▰</span><small>پروژه‌ها</small></button>
+<button data-view="music" class="dockItem"><span class="iosIcon music">♫</span><small>موسیقی</small></button>
+<button data-view="calendar" class="dockItem"><span class="iosIcon cal">12</span><small>تقویم</small></button>
+<button id="bottomAdd" class="dockItem"><span class="iosIcon add">＋</span><small>جدید</small></button>
+</nav>
+
+
+<dialog id="authDialog">
+<form id="authForm">
+ <h3 style="margin:0">حساب ابری ARIA</h3>
+ <div class="sub">همین حساب را روی iPhone و iPad وارد کن تا همه چیز همزمان شود.</div>
+ <label>ایمیل<input id="authEmail" type="email" required placeholder="you@example.com"></label>
+ <label>رمز عبور<input id="authPassword" type="password" minlength="6" required placeholder="حداقل ۶ کاراکتر"></label>
+ <div class="modalActions">
+   <button type="button" id="authClose">بستن</button>
+   <button type="button" id="signUpBtn">ساخت حساب</button>
+   <button type="submit" class="primary">ورود</button>
+ </div>
+ <div id="authMsg" class="sub"></div>
+</form>
+</dialog>
+
+<dialog id="taskDialog">
+<form id="taskForm">
+ <h3 style="margin:0">کار / یادآوری</h3>
+ <input type="hidden" id="taskId">
+ <label>عنوان<input id="title" required placeholder="مثلاً تماس با سالن برای اجرای پنجشنبه"></label>
+ <div class="row">
+  <label>پروژه<select id="project"></select></label>
+  <label>حوزه<select id="area"><option value="general">عمومی</option><option value="work">کاری</option><option value="music">موسیقی</option><option value="personal">شخصی</option></select></label>
+ </div>
+ <label>توضیحات<textarea id="description" placeholder="جزئیات، تصمیم‌ها، نکته‌ها..."></textarea></label>
+ <div class="row3">
+  <label>تاریخ شمسی<input id="dateFa" inputmode="numeric" placeholder="۱۴۰۵/۰۶/۱۴"><input id="date" type="hidden"></label>
+  <label>ساعت<input id="time" type="time"></label>
+  <label>اولویت<select id="priority"><option value="normal">عادی</option><option value="important">مهم</option><option value="urgent">فوری</option></select></label>
+ </div>
+ <div class="row">
+  <label>وضعیت<select id="status"><option value="todo">انجام نشده</option><option value="partial">نیمه‌انجام</option><option value="postponed">تعویق</option><option value="done">انجام شده</option></select></label>
+  <label>تکرار<select id="repeat"><option value="none">بدون تکرار</option><option value="daily">روزانه</option><option value="weekly">هفتگی</option><option value="monthly">ماهانه</option></select></label>
+ </div>
+ <label>زیرکارها (هر خط یک مورد)<textarea id="subtasks" placeholder="خرید کابل&#10;تست صدا&#10;هماهنگی با گروه"></textarea></label>
+ <label>ضمیمه عکس / فایل<input id="files" type="file" multiple accept="image/*,.pdf,.txt,.doc,.docx"></label>
+ <div>
+   <div style="font-size:12px;margin-bottom:6px">یادداشت با قلم / Apple Pencil</div>
+   <div class="canvasWrap"><canvas id="noteCanvas"></canvas></div>
+   <button type="button" id="clearCanvas" style="margin-top:6px">پاک کردن قلم</button>
+ </div>
+ <div class="modalActions">
+  <button type="button" class="danger" id="deleteTaskBtn" style="display:none;margin-left:auto">حذف</button>
+  <button type="button" id="cancelTask">انصراف</button>
+  <button type="submit" class="primary">ذخیره</button>
+ </div>
+</form>
+</dialog>
+
+<dialog id="projectDialog">
+<form id="projectForm">
+ <h3 style="margin:0">پروژه جدید</h3>
+ <label>نام پروژه<input id="projectName" required placeholder="مثلاً نمایشگاه بتن"></label>
+ <label>حوزه<select id="projectArea"><option value="work">کاری</option><option value="music">موسیقی</option><option value="personal">شخصی</option><option value="general">عمومی</option></select></label>
+ <label>توضیح<textarea id="projectDesc"></textarea></label>
+ <div class="modalActions"><button type="button" onclick="projectDialog.close()">انصراف</button><button class="primary">ساخت پروژه</button></div>
+</form>
+</dialog>
+
+<dialog id="musicDialog">
+<form id="musicForm">
+ <h3 style="margin:0">ثبت فعالیت موسیقی</h3>
+ <label>نوع<select id="musicType"><option>تمرین</option><option>اجرا</option><option>ست‌لیست</option><option>تجهیزات</option><option>ایده موسیقی</option></select></label>
+ <label>عنوان<input id="musicTitle" required></label>
+ <div class="row"><label>تاریخ شمسی<input id="musicDateFa" inputmode="numeric" placeholder="۱۴۰۵/۰۶/۱۴"><input id="musicDate" type="hidden"></label><label>مدت / ساعت<input id="musicDuration" placeholder="مثلاً 45 دقیقه"></label></div>
+ <label>یادداشت<textarea id="musicNote"></textarea></label>
+ <div class="modalActions"><button type="button" onclick="musicDialog.close()">انصراف</button><button class="primary">ذخیره</button></div>
+</form>
+</dialog>
+
+<script>
+const KEY='ARIA_ASSISTANT_PRO_V2';
+const init={
+ settings:{smartPostponeDays:1},
+ projects:[
+  {id:'general',name:'عمومی',area:'general',desc:''},
+  {id:'daris',name:'داریس / آزمایشگاه',area:'work',desc:''},
+  {id:'expo',name:'نمایشگاه و رویداد',area:'work',desc:''},
+  {id:'music',name:'آوای بندر / موسیقی',area:'music',desc:''},
+  {id:'personal',name:'شخصی',area:'personal',desc:''}
+ ],
+ tasks:[],music:[],archive:[]
+};
+let db=load(), view='today', searchText='', currentProject=null, canvasDirty=false, focusSeconds=25*60, focusTimer=null;
+function load(){
+ try{
+   const raw=localStorage.getItem(KEY);
+   return raw?JSON.parse(raw):structuredClone(init);
+ }catch(e){return structuredClone(init)}
+}
+function save(){
+ localStorage.setItem(KEY,JSON.stringify(db));
+ render();
+ scheduleChecks();
+ if(window.ARIA_SYNC) window.ARIA_SYNC.queueFullSync(db);
+}
+function uid(){return Math.random().toString(36).slice(2)+Date.now().toString(36)}
+function todayISO(){let d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10)}
+function addDays(date,n){let d=new Date((date||todayISO())+'T12:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)}
+function faDate(){return new Intl.DateTimeFormat('fa-IR-u-ca-persian',{weekday:'long',year:'numeric',month:'long',day:'numeric'}).format(new Date())}
+
+const faD='۰۱۲۳۴۵۶۷۸۹';function faN(v){return String(v).replace(/\d/g,d=>faD[d])}function enN(v){return String(v||'').replace(/[۰-۹]/g,d=>String(faD.indexOf(d)))}
+function d2j(gy,gm,gd){let g=new Date(gy,gm-1,gd),fmt=new Intl.DateTimeFormat('en-US-u-ca-persian',{year:'numeric',month:'numeric',day:'numeric'}),o={};fmt.formatToParts(g).forEach(x=>o[x.type]=+x.value);return{jy:o.year,jm:o.month,jd:o.day}}
+function j2g(jy,jm,jd){let lo=new Date(jy+621,0,1),hi=new Date(jy+622,3,1);while(lo<=hi){let mid=new Date((lo.getTime()+hi.getTime())/2),j=d2j(mid.getFullYear(),mid.getMonth()+1,mid.getDate()),v=j.jy*10000+j.jm*100+j.jd,t=jy*10000+jm*100+jd;if(v===t)return{gy:mid.getFullYear(),gm:mid.getMonth()+1,gd:mid.getDate()};if(v<t)lo=new Date(mid.getFullYear(),mid.getMonth(),mid.getDate()+1);else hi=new Date(mid.getFullYear(),mid.getMonth(),mid.getDate()-1)}return null}
+function iso2j(iso){if(!iso)return'';let m=iso.match(/^(\d{4})-(\d{2})-(\d{2})/);if(!m)return'';let j=d2j(+m[1],+m[2],+m[3]);return `${faN(j.jy)}/${faN(String(j.jm).padStart(2,'0'))}/${faN(String(j.jd).padStart(2,'0'))}`}
+function j2iso(v){v=enN(v).replace(/-/g,'/');let m=v.match(/^(\d{3,4})\/(\d{1,2})\/(\d{1,2})$/);if(!m)return'';let g=j2g(+m[1],+m[2],+m[3]);return g?`${g.gy}-${String(g.gm).padStart(2,'0')}-${String(g.gd).padStart(2,'0')}`:''}
+const jMonths=['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];function jmDays(y,m){if(m<=6)return 31;if(m<=11)return 30;return j2g(y,12,30)?30:29}function jWeek(y,m,d){let g=j2g(y,m,d),w=new Date(g.gy,g.gm-1,g.gd).getDay();return(w+1)%7}
+
+function projectName(id){return db.projects.find(p=>p.id===id)?.name||'عمومی'}
+function isOverdue(t){return t.status!=='done'&&t.date&&t.date<todayISO()}
+function esc(s=''){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+todayLabel.textContent=faDate();
+
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{view=b.dataset.view;currentProject=null;setActive();render()});
+function setActive(){document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view))}
+addTaskBtn.onclick=()=>openTask();bottomAdd.onclick=()=>openTask();
+
+function taskFilter(){
+ let a=[...db.tasks];
+ if(searchText)a=a.filter(t=>(t.title+' '+(t.description||'')+' '+projectName(t.project)).toLowerCase().includes(searchText.toLowerCase()));
+ if(view==='today')a=a.filter(t=>t.date===todayISO()||isOverdue(t));
+ if(view==='inbox')a=a.filter(t=>!t.date&&t.status!=='done');
+ if(view==='archive')a=a.filter(t=>t.status==='done');
+ if(currentProject)a=a.filter(t=>t.project===currentProject);
+ return a.sort((a,b)=>{
+  if((a.status==='done')!==(b.status==='done'))return a.status==='done'?1:-1;
+  if(isOverdue(a)!==isOverdue(b))return isOverdue(a)?-1:1;
+  const rank={urgent:0,important:1,normal:2}; return (a.date||'9999').localeCompare(b.date||'9999')||(rank[a.priority]-rank[b.priority]);
+ });
+}
+function renderTask(t){
+ const s={todo:'انجام نشده',partial:'نیمه‌انجام',postponed:'تعویق',done:'انجام شده'};
+ const subs=(t.subtasks||[]).map((x,i)=>`<div class="subtask">◻︎ ${esc(x)}</div>`).join('');
+ return `<div class="task ${isOverdue(t)?'overdue':''} ${t.status==='done'?'done':''}">
+  <div class="taskTop">
+   <div class="check" onclick="toggleDone('${t.id}')">${t.status==='done'?'✓':''}</div>
+   <div class="taskTitle">${esc(t.title)}</div>
+   <button onclick="openTaskById('${t.id}')">ویرایش</button>
+  </div>
+  <div class="meta">
+   <span class="badge">${esc(projectName(t.project))}</span>
+   <span class="badge ${t.area==='music'?'violet':''}">${t.area==='music'?'موسیقی':t.area==='work'?'کاری':t.area==='personal'?'شخصی':'عمومی'}</span>
+   <span class="badge ${t.priority==='urgent'?'red':t.priority==='important'?'yellow':''}">${t.priority==='urgent'?'فوری':t.priority==='important'?'مهم':'عادی'}</span>
+   <span class="badge ${t.status==='done'?'green':t.status==='partial'?'yellow':''}">${s[t.status]}</span>
+   ${t.date?`<span class="badge">${iso2j(t.date)}${t.time?' • '+faN(t.time):''}</span>`:''}
+   ${t.repeat!=='none'?`<span class="badge">↻ ${t.repeat==='daily'?'روزانه':t.repeat==='weekly'?'هفتگی':'ماهانه'}</span>`:''}
+   ${isOverdue(t)?'<span class="badge red">عقب‌افتاده</span>':''}
+  </div>
+  ${t.description?`<div class="desc">${esc(t.description)}</div>`:''}
+  ${subs?`<div class="subtasks">${subs}</div>`:''}
+  ${t.drawing?`<img src="${t.drawing}" style="max-width:100%;margin-top:8px;border-radius:10px;background:white">`:''}
+  ${(t.attachments||[]).length?`<div class="attachments" style="margin-top:8px">${t.attachments.map(a=>`<span class="attachment">📎 ${esc(a.name)}</span>`).join('')}</div>`:''}
+  <div class="actions">
+    ${t.status!=='partial'?`<button onclick="setStatus('${t.id}','partial')">نیمه‌انجام</button>`:''}
+    <button onclick="smartPostpone('${t.id}')">تعویق هوشمند</button>
+    ${t.status!=='done'?`<button onclick="toggleDone('${t.id}')">✓ انجام شد</button>`:''}
+  </div>
+ </div>`;
+}
+function dashboard(){
+ const today=db.tasks.filter(t=>t.date===todayISO()&&t.status!=='done').length;
+ const overdue=db.tasks.filter(isOverdue).length;
+ const partial=db.tasks.filter(t=>t.status==='partial').length;
+ const urgent=db.tasks.filter(t=>t.priority==='urgent'&&t.status!=='done').length;
+ const done=db.tasks.filter(t=>t.status==='done').length;
+ return `<section class="card hero">
+  <div class="heroTop"><div><h2>امروزت</h2><div class="sub">کارهای امروز + هر چیزی که عقب مانده</div></div><button class="ghost" onclick="view='inbox';render()">ورودی‌ها</button></div>
+  <div class="stats">
+   <div class="stat"><b>${today}</b><span>امروز</span></div><div class="stat"><b>${overdue}</b><span>عقب‌افتاده</span></div>
+   <div class="stat"><b>${partial}</b><span>نیمه‌انجام</span></div><div class="stat"><b>${urgent}</b><span>فوری</span></div><div class="stat"><b>${done}</b><span>تمام‌شده</span></div>
+  </div>
+  <div class="quick">
+<button onclick="openTask()" style="background:linear-gradient(135deg,#4f7cff,#41d7ff)">✅ کار جدید</button>
+<button onclick="openProject()" style="background:linear-gradient(135deg,#ff8d5c,#ffd166);color:#1b1b1b">📁 پروژه</button>
+<button onclick="openMusic()" style="background:linear-gradient(135deg,#9b7cff,#ff78b8)">🎵 موسیقی</button>
+<button onclick="view='focus';render()" style="background:linear-gradient(135deg,#2dd4bf,#9bda63);color:#10201b">🎯 تمرکز</button>
+</div>
+ </section>`;
+}
+function renderTasksSection(title){
+ let a=taskFilter();
+ return `<section class="card section"><div class="sectionHead"><b>${title}</b><span class="sub">${a.length} مورد</span></div>
+ <div class="taskList">${a.length?a.map(renderTask).join(''):'<div class="empty">چیزی اینجا نیست.</div>'}</div></section>`
+}
+function renderProjects(){
+ return `<section class="card section"><div class="sectionHead"><b>پروژه‌ها و پوشه‌ها</b><button onclick="openProject()">＋ پروژه</button></div>
+ <div class="projectGrid">${db.projects.map(p=>{
+  const open=db.tasks.filter(t=>t.project===p.id&&t.status!=='done').length;
+  return `<div class="project" onclick="currentProject='${p.id}';view='projects';render()"><b>${esc(p.name)}</b><small>${open} کار باز • ${p.area==='music'?'موسیقی':p.area==='work'?'کاری':p.area==='personal'?'شخصی':'عمومی'}</small>${p.desc?`<div class="desc">${esc(p.desc)}</div>`:''}</div>`
+ }).join('')}</div></section>`+(currentProject?renderTasksSection('کارهای '+projectName(currentProject)):'');
+}
+function renderMusic(){
+ let logs=[...db.music].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+ return `<section class="card section"><div class="sectionHead"><b>مرکز موسیقی</b><button onclick="openMusic()">＋ ثبت</button></div>
+ <div class="musicCards">
+  <div class="musicCard"><b>تمرین‌ها</b><div class="sub">${logs.filter(x=>x.type==='تمرین').length} ثبت</div></div>
+  <div class="musicCard"><b>اجراها</b><div class="sub">${logs.filter(x=>x.type==='اجرا').length} ثبت</div></div>
+  <div class="musicCard"><b>تجهیزات / ایده‌ها</b><div class="sub">${logs.filter(x=>['تجهیزات','ایده موسیقی','ست‌لیست'].includes(x.type)).length} ثبت</div></div>
+ </div></section>
+ <section class="card section"><div class="sectionHead"><b>آخرین ثبت‌های موسیقی</b></div>
+ <div class="taskList">${logs.length?logs.map(x=>`<div class="task"><div class="taskTitle">${esc(x.title)}</div><div class="meta"><span class="badge violet">${esc(x.type)}</span><span class="badge">${esc(x.date||'')}</span>${x.duration?`<span class="badge">${esc(x.duration)}</span>`:''}</div>${x.note?`<div class="desc">${esc(x.note)}</div>`:''}</div>`).join(''):'<div class="empty">هنوز چیزی ثبت نشده.</div>'}</div></section>`+
+ renderMusicTasks();
+}
+function renderMusicTasks(){
+ let oldView=view;view='music';let arr=[...db.tasks].filter(t=>t.area==='music'&&t.status!=='done');view=oldView;
+ return `<section class="card section"><div class="sectionHead"><b>کارهای موسیقی</b></div><div class="taskList">${arr.length?arr.map(renderTask).join(''):'<div class="empty">کار باز موسیقی نداری.</div>'}</div></section>`;
+}
+function renderCalendar(){
+ let tj=d2j(new Date().getFullYear(),new Date().getMonth()+1,new Date().getDate());if(!window._jy){_jy=tj.jy;_jm=tj.jm}let first=jWeek(_jy,_jm,1),days=jmDays(_jy,_jm),cells=[];for(let i=0;i<first;i++)cells.push('<div class="jday empty"></div>');
+ for(let d=1;d<=days;d++){let g=j2g(_jy,_jm,d),iso=`${g.gy}-${String(g.gm).padStart(2,'0')}-${String(g.gd).padStart(2,'0')}`,ts=db.tasks.filter(t=>t.date===iso&&t.status!=='done'),today=tj.jy===_jy&&tj.jm===_jm&&tj.jd===d;cells.push(`<div class="jday ${today?'today':''} ${ts.length?'has':''}" onclick="calDay('${iso}')"><b>${faN(d)}</b>${ts.length?`<small>${faN(ts.length)} کار</small>`:''}</div>`)}
+ let mts=db.tasks.filter(t=>t.date&&iso2j(t.date).startsWith(`${faN(_jy)}/${faN(String(_jm).padStart(2,'0'))}`)&&t.status!=='done');
+ return `<section class="card section"><div class="calHead"><button class="ghost" onclick="calPrev()">‹ ماه قبل</button><div style="text-align:center"><b>${jMonths[_jm-1]} ${faN(_jy)}</b><div class="sub">تقویم شمسی</div></div><button class="ghost" onclick="calNext()">ماه بعد ›</button></div><div class="jweek"><span>ش</span><span>ی</span><span>د</span><span>س</span><span>چ</span><span>پ</span><span>ج</span></div><div class="jcal">${cells.join('')}</div></section><section class="card section"><div class="sectionHead"><b>کارهای این ماه</b><span class="sub">${faN(mts.length)} مورد</span></div><div class="taskList">${mts.length?mts.map(renderTask).join(''):'<div class="empty">برای این ماه کاری ثبت نشده.</div>'}</div></section>`;
+}
+function calPrev(){_jm--;if(_jm<1){_jm=12;_jy--}render()}function calNext(){_jm++;if(_jm>12){_jm=1;_jy++}render()}function calDay(iso){let a=db.tasks.filter(t=>t.date===iso);if(!a.length){openTask();setTimeout(()=>{date.value=iso;dateFa.value=iso2j(iso)},30);return}alert(iso2j(iso)+'
+
+'+a.map(x=>'• '+x.title).join('
+'))}window.calPrev=calPrev;window.calNext=calNext;window.calDay=calDay;
+function renderFocus(){
+ return `<section class="card focusCard"><b>حالت تمرکز</b><div class="sub">برای یک کار فقط 25 دقیقه روی همان بمان.</div><div class="focusTimer" id="focusDisplay">${fmt(focusSeconds)}</div>
+ <div class="quick" style="justify-content:center"><button onclick="startFocus()">شروع</button><button onclick="pauseFocus()">توقف</button><button onclick="resetFocus()">ریست</button></div></section>`
+}
+function fmt(s){return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`}
+function startFocus(){if(focusTimer)return;focusTimer=setInterval(()=>{focusSeconds--;let e=document.getElementById('focusDisplay');if(e)e.textContent=fmt(focusSeconds);if(focusSeconds<=0){pauseFocus();alert('زمان تمرکز تمام شد.')}} ,1000)}
+function pauseFocus(){clearInterval(focusTimer);focusTimer=null}
+function resetFocus(){pauseFocus();focusSeconds=25*60;render()}
+window.startFocus=startFocus;window.pauseFocus=pauseFocus;window.resetFocus=resetFocus;
+
+function render(){
+ setActive();
+ if(view==='today')main.innerHTML=dashboard()+renderTasksSection('تابلو اعلانات امروز');
+ else if(view==='inbox')main.innerHTML=renderTasksSection('ورودی‌ها — کارهایی که هنوز زمان ندادی');
+ else if(view==='projects')main.innerHTML=renderProjects();
+ else if(view==='music')main.innerHTML=renderMusic();
+ else if(view==='calendar')main.innerHTML=renderCalendar();
+ else if(view==='focus')main.innerHTML=renderFocus();
+ else if(view==='archive')main.innerHTML=renderTasksSection('آرشیو انجام‌شده‌ها');
+}
+search.oninput=e=>{searchText=e.target.value;render()}
+
+function fillProjects(){project.innerHTML=db.projects.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('')}
+function openTask(t=null){
+ fillProjects();taskForm.reset();taskId.value=t?.id||'';title.value=t?.title||'';project.value=t?.project||currentProject||'general';area.value=t?.area||'general';description.value=t?.description||'';
+ date.value=t?.date||todayISO();dateFa.value=iso2j(date.value);time.value=t?.time||'';priority.value=t?.priority||'normal';status.value=t?.status||'todo';repeat.value=t?.repeat||'none';subtasks.value=(t?.subtasks||[]).join('\n');
+ deleteTaskBtn.style.display=t?'block':'none';canvasDirty=false;setTimeout(()=>loadCanvas(t?.drawing||null),80);taskDialog.showModal()
+}
+window.openTask=openTask;window.openTaskById=id=>openTask(db.tasks.find(t=>t.id===id));
+cancelTask.onclick=()=>taskDialog.close();
+taskForm.onsubmit=async e=>{
+ e.preventDefault(); let iso=j2iso(dateFa.value);if(dateFa.value&&!iso){alert('تاریخ شمسی معتبر نیست؛ مثل ۱۴۰۵/۰۶/۱۴ وارد کن.');return}date.value=iso;
+ let existing=db.tasks.find(t=>t.id===taskId.value);
+ let attachments=existing?.attachments||[];
+ for(const f of files.files)attachments.push({name:f.name,size:f.size,type:f.type});
+ let obj={id:taskId.value||uid(),title:title.value.trim(),project:project.value,area:area.value,description:description.value.trim(),date:date.value,time:time.value,priority:priority.value,status:status.value,repeat:repeat.value,subtasks:subtasks.value.split('\n').map(x=>x.trim()).filter(Boolean),attachments,drawing:canvasDirty?noteCanvas.toDataURL('image/png'):(existing?.drawing||null),createdAt:existing?.createdAt||Date.now()};
+ let i=db.tasks.findIndex(t=>t.id===obj.id);if(i>=0)db.tasks[i]=obj;else db.tasks.push(obj);save();taskDialog.close()
+};
+deleteTaskBtn.onclick=()=>{if(confirm('این کار حذف شود؟')){db.tasks=db.tasks.filter(t=>t.id!==taskId.value);save();taskDialog.close()}}
+function setStatus(id,s){let t=db.tasks.find(x=>x.id===id);if(t){t.status=s;save()}}
+function toggleDone(id){let t=db.tasks.find(x=>x.id===id);if(!t)return;if(t.status==='done'){t.status='todo'}else{t.status='done';createNextRepeat(t)}save()}
+function createNextRepeat(t){
+ if(t.repeat==='none'||!t.date)return;
+ let next=t.date;if(t.repeat==='daily')next=addDays(t.date,1);if(t.repeat==='weekly')next=addDays(t.date,7);
+ if(t.repeat==='monthly'){let d=new Date(t.date+'T12:00');d.setMonth(d.getMonth()+1);next=d.toISOString().slice(0,10)}
+ db.tasks.push({...t,id:uid(),status:'todo',date:next,createdAt:Date.now()})
+}
+function smartPostpone(id){
+ let t=db.tasks.find(x=>x.id===id);if(!t)return;
+ let days=t.priority==='urgent'?1:t.priority==='important'?2:3;
+ let base=t.date&&t.date>todayISO()?t.date:todayISO();t.date=addDays(base,days);t.status='postponed';save()
+}
+window.setStatus=setStatus;window.toggleDone=toggleDone;window.smartPostpone=smartPostpone;
+
+function openProject(){projectForm.reset();projectDialog.showModal()}window.openProject=openProject;
+projectForm.onsubmit=e=>{e.preventDefault();db.projects.push({id:uid(),name:projectName.value.trim(),area:projectArea.value,desc:projectDesc.value.trim()});save();projectDialog.close()}
+function openMusic(){musicForm.reset();musicDate.value=todayISO();musicDateFa.value=iso2j(musicDate.value);musicDialog.showModal()}window.openMusic=openMusic;
+musicForm.onsubmit=e=>{e.preventDefault();let iso=j2iso(musicDateFa.value);if(musicDateFa.value&&!iso){alert('تاریخ شمسی معتبر نیست');return}musicDate.value=iso;db.music.push({id:uid(),type:musicType.value,title:musicTitle.value.trim(),date:musicDate.value,duration:musicDuration.value.trim(),note:musicNote.value.trim()});save();musicDialog.close()}
+
+backupBtn.onclick=()=>{let blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ARIA-backup-'+todayISO()+'.json';a.click();URL.revokeObjectURL(a.href)}
+restoreInput.onchange=async e=>{let f=e.target.files[0];if(!f)return;try{let d=JSON.parse(await f.text());if(d.projects&&d.tasks){db=d;save();alert('بازیابی شد')}}catch(err){alert('فایل معتبر نیست')}e.target.value=''}
+notifyBtn.onclick=async()=>{if(!('Notification'in window)){alert('اعلان مرورگر پشتیبانی نمی‌شود.');return}let p=await Notification.requestPermission();if(p==='granted'){new Notification('ARIA',{body:'اعلان‌ها فعال شدند.'});scheduleChecks()}}
+let notifTimer=null;function scheduleChecks(){clearInterval(notifTimer);notifTimer=setInterval(()=>{if(typeof Notification==='undefined'||Notification.permission!=='granted')return;let n=new Date(),hh=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');db.tasks.filter(t=>t.status!=='done'&&t.date===todayISO()&&t.time===hh&&t.lastNotified!==todayISO()+hh).forEach(t=>{new Notification(t.title,{body:t.description||projectName(t.project)});t.lastNotified=todayISO()+hh});localStorage.setItem(KEY,JSON.stringify(db))},30000)}
+
+const c=noteCanvas,ctx=c.getContext('2d');let drawing=false;
+function resizeCanvas(){let r=c.getBoundingClientRect(),q=devicePixelRatio||1;c.width=r.width*q;c.height=210*q;ctx.setTransform(q,0,0,q,0,0);ctx.lineWidth=2.2;ctx.lineCap='round';ctx.strokeStyle='#111';ctx.fillStyle='#fff';ctx.fillRect(0,0,r.width,210)}
+function loadCanvas(src){resizeCanvas();if(src){let im=new Image();im.onload=()=>ctx.drawImage(im,0,0,c.clientWidth,210);im.src=src}}
+function pos(e){let r=c.getBoundingClientRect(),p=e.touches?e.touches[0]:e;return{x:p.clientX-r.left,y:p.clientY-r.top}}
+function st(e){drawing=true;canvasDirty=true;let p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);e.preventDefault()}
+function mv(e){if(!drawing)return;let p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke();e.preventDefault()}
+function en(){drawing=false}
+['pointerdown','touchstart'].forEach(x=>c.addEventListener(x,st,{passive:false}));['pointermove','touchmove'].forEach(x=>c.addEventListener(x,mv,{passive:false}));['pointerup','pointercancel','touchend'].forEach(x=>c.addEventListener(x,en));clearCanvas.onclick=()=>{loadCanvas(null);canvasDirty=true}
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js');
+function updateCloudStatus(){
+  const cfg=window.ARIA_CLOUD||{};
+  const el=document.getElementById('cloudStatus');
+  if(!el)return;
+  if(cfg.cloudEnabled && cfg.supabaseUrl && cfg.supabaseAnonKey){
+    el.textContent='☁️ Cloud متصل';
+    el.className='badge green';
+  }else{
+    el.textContent='☁️ اتصال ابری تنظیم نشده';
+    el.className='badge yellow';
+  }
+}
+updateCloudStatus();
+
+async function bootstrapCloud(){
+  if(!window.ARIA_SYNC) return;
+  const state = await window.ARIA_SYNC.init({
+    onState:(s)=>{
+      const el=document.getElementById('cloudStatus');
+      if(!el)return;
+      if(s==='online'){el.textContent='☁️ همگام';el.className='badge green'}
+      else if(s==='offline'){el.textContent='☁️ آفلاین';el.className='badge yellow'}
+      else if(s==='auth'){el.textContent='☁️ ورود لازم';el.className='badge yellow'}
+      else {el.textContent='☁️ در حال اتصال';el.className='badge yellow'}
+    },
+    onData:(remote)=>{
+      db = remote;
+      localStorage.setItem(KEY,JSON.stringify(db));
+      render();
+    }
+  });
+}
+bootstrapCloud();
+
+accountBtn.onclick=()=>authDialog.showModal();
+authClose.onclick=()=>authDialog.close();
+authForm.onsubmit=async e=>{
+ e.preventDefault();
+ authMsg.textContent='در حال ورود...';
+ const r=await window.ARIA_SYNC.signIn(authEmail.value.trim(),authPassword.value);
+ authMsg.textContent=r.ok?'وارد شدی. در حال همگام‌سازی...':r.error;
+ if(r.ok){setTimeout(()=>authDialog.close(),700)}
+};
+signUpBtn.onclick=async()=>{
+ authMsg.textContent='در حال ساخت حساب...';
+ const r=await window.ARIA_SYNC.signUp(authEmail.value.trim(),authPassword.value);
+ authMsg.textContent=r.ok?'حساب ساخته شد. اگر ایمیل تأیید خواست، ایمیلت را چک کن.':r.error;
+};
+
+render();scheduleChecks();
+</script>
+</body>
+</html>
