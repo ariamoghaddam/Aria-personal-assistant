@@ -120,9 +120,24 @@ form{display:grid;gap:10px}label{display:grid;gap:6px;font-size:12px;color:#d0dc
    <button type="button" id="authClose">بستن</button>
    <button type="button" id="signUpBtn">ساخت حساب</button>
    <button type="button" id="resendConfirmBtn">ارسال مجدد تأیید</button>
+   <button type="button" id="forgotPasswordBtn">فراموشی رمز</button>
    <button type="submit" class="primary">ورود</button>
  </div>
  <div id="authMsg" class="sub"></div>
+</form>
+</dialog>
+
+<dialog id="resetPasswordDialog">
+<form id="resetPasswordForm">
+ <h3 style="margin:0">تعیین رمز جدید</h3>
+ <div class="sub">رمز جدید باید حداقل ۶ کاراکتر باشد.</div>
+ <label>رمز جدید<input id="newPassword" type="password" minlength="6" required placeholder="حداقل ۶ کاراکتر"></label>
+ <label>تکرار رمز جدید<input id="newPasswordRepeat" type="password" minlength="6" required></label>
+ <div class="modalActions">
+   <button type="button" id="resetPasswordClose">بستن</button>
+   <button type="submit" class="primary">ذخیره رمز جدید</button>
+ </div>
+ <div id="resetPasswordMsg" class="sub"></div>
 </form>
 </dialog>
 
@@ -427,6 +442,12 @@ async function bootstrapCloud(){
       db = remote;
       localStorage.setItem(KEY,JSON.stringify(db));
       render();
+    },
+    onRecovery:()=>{
+      authDialog.close();
+      resetPasswordForm.reset();
+      resetPasswordMsg.textContent='لینک معتبر است؛ رمز جدیدت را وارد کن.';
+      resetPasswordDialog.showModal();
     }
   });
 }
@@ -452,6 +473,22 @@ document.getElementById('resendConfirmBtn').onclick=async()=>{
  authMsg.textContent='در حال ارسال مجدد لینک تأیید...';
  const r=await window.ARIA_SYNC.resendConfirmation(email);
  authMsg.textContent=r.ok?'ایمیل تأیید جدید ارسال شد. Inbox و Spam را چک کن.':r.error;
+};
+document.getElementById('forgotPasswordBtn').onclick=async()=>{
+ const email=authEmail.value.trim();
+ if(!email){authMsg.textContent='اول ایمیلت را وارد کن.';return}
+ authMsg.textContent='در حال ارسال لینک تغییر رمز...';
+ const r=await window.ARIA_SYNC.resetPassword(email);
+ authMsg.textContent=r.ok?'لینک تغییر رمز ایمیل شد؛ ایمیل را باز کن.':r.error;
+};
+document.getElementById('resetPasswordClose').onclick=()=>resetPasswordDialog.close();
+document.getElementById('resetPasswordForm').onsubmit=async e=>{
+ e.preventDefault();
+ if(newPassword.value!==newPasswordRepeat.value){resetPasswordMsg.textContent='دو رمز یکسان نیستند.';return}
+ resetPasswordMsg.textContent='در حال ذخیره رمز جدید...';
+ const r=await window.ARIA_SYNC.updatePassword(newPassword.value);
+ resetPasswordMsg.textContent=r.ok?'رمز جدید ذخیره شد؛ اکنون وارد حساب هستی.':r.error;
+ if(r.ok)setTimeout(()=>resetPasswordDialog.close(),1000);
 };
 
 render();scheduleChecks();

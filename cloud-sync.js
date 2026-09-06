@@ -1,7 +1,7 @@
 
 (function(){
   const cfg = window.ARIA_CLOUD || {};
-  let client = null, user = null, onState=()=>{}, onData=()=>{}, syncing=false, timer=null;
+  let client = null, user = null, onState=()=>{}, onData=()=>{}, onRecovery=()=>{}, syncing=false, timer=null;
 
   function projectToLocal(p){ return {id:p.id,name:p.name,area:p.area,desc:p.description||''}; }
   function taskToLocal(t){ return {
@@ -90,15 +90,16 @@
   }
 
   async function init(opts={}){
-    onState=opts.onState||onState; onData=opts.onData||onData;
+    onState=opts.onState||onState; onData=opts.onData||onData; onRecovery=opts.onRecovery||onRecovery;
     if(!cfg.cloudEnabled||!cfg.supabaseUrl||!cfg.supabaseAnonKey){onState('offline');return}
     client=supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey);
     const {data}=await client.auth.getSession();
     user=data.session?.user||null;
     if(!user){onState('auth')}
     else {subscribe();await pull()}
-    client.auth.onAuthStateChange(async(_event,session)=>{
+    client.auth.onAuthStateChange(async(event,session)=>{
       user=session?.user||null;
+      if(event==='PASSWORD_RECOVERY') setTimeout(()=>onRecovery(),0);
       if(user){subscribe();await pull()} else onState('auth');
     });
   }
@@ -128,9 +129,21 @@
     });
     return error?{ok:false,error:error.message}:{ok:true};
   }
+  async function resetPassword(email){
+    if(!client) await init({});
+    const {error}=await client.auth.resetPasswordForEmail(email,{
+      redirectTo:window.location.origin+'/'
+    });
+    return error?{ok:false,error:error.message}:{ok:true};
+  }
+  async function updatePassword(password){
+    if(!client) await init({});
+    const {error}=await client.auth.updateUser({password});
+    return error?{ok:false,error:error.message}:{ok:true};
+  }
   function queueFullSync(db){
     clearTimeout(timer);
     timer=setTimeout(()=>pushSnapshot(db),500);
   }
-  window.ARIA_SYNC={init,signIn,signUp,resendConfirmation,queueFullSync,pull};
+  window.ARIA_SYNC={init,signIn,signUp,resendConfirmation,resetPassword,updatePassword,queueFullSync,pull};
 })();
