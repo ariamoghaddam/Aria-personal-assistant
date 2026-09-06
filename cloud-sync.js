@@ -2,6 +2,7 @@
 (function(){
   const cfg = window.ARIA_CLOUD || {};
   let client = null, user = null, onState=()=>{}, onData=()=>{}, onRecovery=()=>{}, syncing=false, timer=null;
+  const recoveryHint = /(?:#|[?&])type=recovery(?:&|$)/.test(window.location.href);
 
   function projectToLocal(p){ return {id:p.id,name:p.name,area:p.area,desc:p.description||''}; }
   function taskToLocal(t){ return {
@@ -96,10 +97,18 @@
     const {data}=await client.auth.getSession();
     user=data.session?.user||null;
     if(!user){onState('auth')}
-    else {subscribe();await pull()}
+    else {
+      subscribe();
+      await pull();
+      if(recoveryHint) onRecovery(data.session);
+    }
     client.auth.onAuthStateChange(async(event,session)=>{
       user=session?.user||null;
-      if(event==='PASSWORD_RECOVERY') setTimeout(()=>onRecovery(),0);
+      if(event==='PASSWORD_RECOVERY'){
+        onRecovery(session);
+        if(session) onState('online');
+        return;
+      }
       if(user){subscribe();await pull()} else onState('auth');
     });
   }
@@ -129,21 +138,27 @@
     });
     return error?{ok:false,error:error.message}:{ok:true};
   }
-  async function resetPassword(email){
+  async function requestPasswordReset(email){
     if(!client) await init({});
-    const {error}=await client.auth.resetPasswordForEmail(email,{
-      redirectTo:window.location.origin+'/'
-    });
+    const redirect = window.location.origin + '/';
+    const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo:redirect});
     return error?{ok:false,error:error.message}:{ok:true};
   }
   async function updatePassword(password){
     if(!client) await init({});
-    const {error}=await client.auth.updateUser({password});
-    return error?{ok:false,error:error.message}:{ok:true};
+    const {data,error}=await client.auth.updateUser({password});
+    if(error) return {ok:false,error:error.message};
+    user=data.user||user;
+    try{
+      history.replaceState({},document.title,window.location.pathname+window.location.search);
+    }catch(_){}
+    onState('online');
+    if(user) await pull();
+    return {ok:true};
   }
   function queueFullSync(db){
     clearTimeout(timer);
     timer=setTimeout(()=>pushSnapshot(db),500);
   }
-  window.ARIA_SYNC={init,signIn,signUp,resendConfirmation,resetPassword,updatePassword,queueFullSync,pull};
+  window.ARIA_SYNC={init,signIn,signUp,resendConfirmation,requestPasswordReset,updatePassword,queueFullSync,pull};
 })();
