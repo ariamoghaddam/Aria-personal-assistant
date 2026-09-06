@@ -110,12 +110,27 @@
   }
   async function signUp(email,password){
     if(!client) await init({});
-    const {error}=await client.auth.signUp({email,password});
+    const redirect = window.location.origin + '/';
+    const {error}=await client.auth.signUp({
+      email,
+      password,
+      options:{emailRedirectTo: redirect}
+    });
+    return error?{ok:false,error:error.message}:{ok:true};
+  }
+  async function resendConfirmation(email){
+    if(!client) await init({});
+    const redirect = window.location.origin + '/';
+    const {error}=await client.auth.resend({
+      type:'signup',
+      email,
+      options:{emailRedirectTo: redirect}
+    });
     return error?{ok:false,error:error.message}:{ok:true};
   }
   function queueFullSync(db){
     clearTimeout(timer);
     timer=setTimeout(()=>pushSnapshot(db),500);
   }
-  window.ARIA_SYNC={init,signIn,signUp,queueFullSync,pull};
+  window.ARIA_SYNC={init,signIn,signUp,resendConfirmation,queueFullSync,pull};
 })();

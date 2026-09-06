@@ -119,6 +119,7 @@ form{display:grid;gap:10px}label{display:grid;gap:6px;font-size:12px;color:#d0dc
  <div class="modalActions">
    <button type="button" id="authClose">بستن</button>
    <button type="button" id="signUpBtn">ساخت حساب</button>
+   <button type="button" id="resendConfirmBtn">ارسال مجدد تأیید</button>
    <button type="submit" class="primary">ورود</button>
  </div>
  <div id="authMsg" class="sub"></div>
@@ -443,7 +444,14 @@ document.getElementById('authForm').onsubmit=async e=>{
 document.getElementById('signUpBtn').onclick=async()=>{
  authMsg.textContent='در حال ساخت حساب...';
  const r=await window.ARIA_SYNC.signUp(authEmail.value.trim(),authPassword.value);
- authMsg.textContent=r.ok?'حساب ساخته شد. اگر ایمیل تأیید خواست، ایمیلت را چک کن.':r.error;
+ authMsg.textContent=r.ok?'حساب ساخته شد. ایمیل تأیید را باز کن.':r.error;
+};
+document.getElementById('resendConfirmBtn').onclick=async()=>{
+ const email=authEmail.value.trim();
+ if(!email){authMsg.textContent='اول ایمیلت را وارد کن.';return}
+ authMsg.textContent='در حال ارسال مجدد لینک تأیید...';
+ const r=await window.ARIA_SYNC.resendConfirmation(email);
+ authMsg.textContent=r.ok?'ایمیل تأیید جدید ارسال شد. Inbox و Spam را چک کن.':r.error;
 };
 
 render();scheduleChecks();
