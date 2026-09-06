@@ -44,14 +44,12 @@
     if(syncing||!client||!user)return;
     syncing=true;
     try{
-      // Upsert projects first
       for(const p of db.projects||[]){
-        if(String(p.id).length<30) continue; // local seed IDs are not UUIDs; cloud defaults are created separately
+        if(String(p.id).length<30) continue;
         await client.from('aria_projects').upsert({
           id:p.id,owner_id:user.id,name:p.name,area:p.area||'general',description:p.desc||''
         });
       }
-      // Resolve local project names to cloud IDs when needed
       const rp=await client.from('aria_projects').select('*').eq('owner_id',user.id);
       const cloudProjects=rp.data||[];
       const nameMap=new Map(cloudProjects.map(p=>[p.name,p.id]));
@@ -144,6 +142,9 @@
     const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo:redirect});
     return error?{ok:false,error:error.message}:{ok:true};
   }
+  async function resetPassword(email){
+    return requestPasswordReset(email);
+  }
   async function updatePassword(password){
     if(!client) await init({});
     const {data,error}=await client.auth.updateUser({password});
@@ -160,5 +161,5 @@
     clearTimeout(timer);
     timer=setTimeout(()=>pushSnapshot(db),500);
   }
-  window.ARIA_SYNC={init,signIn,signUp,resendConfirmation,requestPasswordReset,updatePassword,queueFullSync,pull};
+  window.ARIA_SYNC={init,signIn,signUp,resendConfirmation,requestPasswordReset,resetPassword,updatePassword,queueFullSync,pull};
 })();
