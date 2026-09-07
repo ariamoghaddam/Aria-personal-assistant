@@ -7,7 +7,7 @@ window.ARIA_CLOUD = {
 };
 
 (async()=>{
-  const marker='ARIA_SW_PURGED_MUSIC_PRO_V1';
+  const marker='ARIA_SW_PURGED_MUSIC_METRONOME_V1';
   try{
     if(!localStorage.getItem(marker)){
       localStorage.setItem(marker,'1');
@@ -32,7 +32,7 @@ window.ARIA_CLOUD = {
   });
 
   window.addEventListener('load',()=>setTimeout(async()=>{
-    document.querySelectorAll('script[data-aria-ai-input],script[data-aria-voice-guard],script[data-aria-hand-local],script[data-aria-brain],script[data-aria-theme],script[data-aria-settings],script[data-aria-focus],script[data-aria-focus-distraction],script[data-aria-focus-entry],script[data-aria-productivity],script[data-aria-price-book],script[data-aria-music-pro]').forEach(x=>x.remove());
+    document.querySelectorAll('script[data-aria-ai-input],script[data-aria-voice-guard],script[data-aria-hand-local],script[data-aria-brain],script[data-aria-theme],script[data-aria-settings],script[data-aria-focus],script[data-aria-focus-distraction],script[data-aria-focus-entry],script[data-aria-productivity],script[data-aria-price-book],script[data-aria-music-pro],script[data-aria-metronome]').forEach(x=>x.remove());
 
     await load('./theme-ui.js?v=1','ariaTheme').catch(e=>console.error('ARIA theme load failed',e));
     load('./settings-ui.js?v=2','ariaSettings').catch(e=>console.error('ARIA settings load failed',e));
@@ -42,7 +42,8 @@ window.ARIA_CLOUD = {
     load('./focus-entry-fix.js?v=1','ariaFocusEntry').catch(e=>console.error('ARIA focus entry failed',e));
     load('./productivity-suite.js?v=1','ariaProductivity').catch(e=>console.error('ARIA productivity load failed',e));
     load('./project-price-book.js?v=1','ariaPriceBook').catch(e=>console.error('ARIA price book load failed',e));
-    load('./music-suite.js?v=1','ariaMusicPro').catch(e=>console.error('ARIA music pro load failed',e));
+    await load('./music-suite.js?v=1','ariaMusicPro').catch(e=>console.error('ARIA music pro load failed',e));
+    load('./music-metronome.js?v=1','ariaMetronome').catch(e=>console.error('ARIA metronome load failed',e));
     load('./handwriting-local.js?v=2','ariaHandLocal').catch(e=>console.error('ARIA handwriting load failed',e));
 
     try{
