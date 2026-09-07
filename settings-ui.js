@@ -11,11 +11,14 @@
   }
   async function getUser(){const c=getClient();const {data,error}=await c.auth.getUser();if(error)throw error;return data.user||null}
   function setMsg(t,ok=false){const e=$('ariaSettingsMsg');if(!e)return;e.textContent=t||'';e.style.color=ok?'#7fe8bf':''}
+  function loadTouchSound(){if(window.ARIA_TOUCH_SOUND)return;const s=document.createElement('script');s.src='./touch-sound.js?v=1';s.onload=()=>syncSoundToggle();document.head.appendChild(s)}
+  function syncSoundToggle(){const t=$('ariaTouchSoundToggle');if(t&&window.ARIA_TOUCH_SOUND)t.checked=window.ARIA_TOUCH_SOUND.enabled()}
   const css=document.createElement('style');css.textContent=`
     #ariaThemeBtn{display:none!important}
     #ariaSettingsBtn{width:42px;height:42px;padding:0!important;display:grid;place-items:center;font-size:18px;border:1px solid var(--line)!important;background:color-mix(in srgb,var(--panel2) 90%,transparent)!important}
     .ariaSettingsBlock{margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:16px;background:color-mix(in srgb,var(--panel2) 72%,transparent)}
     .ariaSettingsTitle{font-weight:800;margin-bottom:8px}.ariaSettingsActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .ariaSwitchRow{display:flex;align-items:center;justify-content:space-between;gap:14px}.ariaSwitchRow input{width:22px;height:22px}
     @media(max-width:700px){#ariaSettingsBtn{width:39px;height:39px}}
   `;document.head.appendChild(css);
   function ensureDialog(){
@@ -24,6 +27,7 @@
     d.innerHTML=`<div style="min-width:min(620px,88vw)">
       <div class="sectionHead"><b>⚙️ تنظیمات ARIA</b><button type="button" class="ghost" id="ariaSettingsClose">بستن</button></div>
       <div class="ariaSettingsBlock"><div class="ariaSettingsTitle">ظاهر و تم</div><div class="sub">حالت روز، شب، اتومات و رنگ‌بندی برنامه</div><div class="ariaSettingsActions"><button type="button" id="ariaOpenTheme">🎨 تغییر ظاهر و تم</button></div></div>
+      <div class="ariaSettingsBlock"><div class="ariaSettingsTitle">صدا و لمس</div><div class="ariaSwitchRow"><div><b>صدای لمس</b><div class="sub">صدای کوتاه شبیه تاچ آیفون هنگام لمس دکمه‌ها</div></div><input id="ariaTouchSoundToggle" type="checkbox"></div></div>
       <div class="ariaSettingsBlock"><div class="ariaSettingsTitle">حساب کاربری</div>
         <label>نام کاربری / نام نمایشی<input id="ariaDisplayName" placeholder="مثلاً آریا"></label>
         <label style="margin-top:10px">ایمیل ورود<input id="ariaAccountEmail" type="email" placeholder="you@example.com"></label>
@@ -39,6 +43,7 @@
     document.body.appendChild(d);
     $('ariaSettingsClose').onclick=()=>d.close();
     $('ariaOpenTheme').onclick=()=>{const t=$('ariaThemeBtn');if(t)t.click();else setMsg('بخش ظاهر هنوز لود نشده؛ یک‌بار برنامه را دوباره باز کن.')};
+    $('ariaTouchSoundToggle').onchange=e=>{if(window.ARIA_TOUCH_SOUND){window.ARIA_TOUCH_SOUND.setEnabled(e.target.checked);window.ARIA_TOUCH_SOUND.soft()}else loadTouchSound()};
     $('ariaSaveAccount').onclick=async()=>{
       try{
         setMsg('در حال ذخیره...');const c=getClient();const name=$('ariaDisplayName').value.trim(),email=$('ariaAccountEmail').value.trim();
@@ -56,7 +61,7 @@
     return d;
   }
   async function openSettings(){
-    const d=ensureDialog();setMsg('');
+    const d=ensureDialog();setMsg('');syncSoundToggle();
     try{const u=await getUser();if(u){$('ariaAccountEmail').value=u.email||'';$('ariaDisplayName').value=u.user_metadata?.display_name||u.user_metadata?.full_name||''}}catch(_){ }
     d.showModal();
   }
@@ -65,6 +70,6 @@
     const top=document.querySelector('header .top>div:last-child')||document.querySelector('.top>div:last-child');if(!top)return;
     const b=document.createElement('button');b.id='ariaSettingsBtn';b.type='button';b.title='تنظیمات';b.textContent='⚙️';b.onclick=openSettings;top.insertBefore(b,top.firstChild);
   }
-  ensureDialog();mount();new MutationObserver(mount).observe(document.documentElement,{childList:true,subtree:true});
+  loadTouchSound();ensureDialog();mount();new MutationObserver(mount).observe(document.documentElement,{childList:true,subtree:true});
   window.ARIA_SETTINGS_OPEN=openSettings;
 })();
