@@ -14,26 +14,27 @@
     return false;
   }
 
-  async function getAuthHeaders(){
+  async function getToken(){
     if(!aiClient){
       if(!window.supabase||!cfg.supabaseUrl||!cfg.supabaseAnonKey)throw new Error('اتصال ابری آماده نیست.');
       aiClient=supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey);
     }
     const {data,error}=await aiClient.auth.getSession();
     if(error)throw error;
-    const token=data?.session?.access_token;
+    const token=String(data?.session?.access_token||'').trim();
     if(!token)throw new Error('برای استفاده از هوش مصنوعی باید وارد حساب ARIA باشی.');
-    return {Authorization:`Bearer ${token}`};
+    return token;
   }
 
-  async function callAI(mode,body,contentType){
-    const h=await getAuthHeaders();
-    if(contentType)h['Content-Type']=contentType;
-    const r=await fetch(`/api/aria-ai?mode=${encodeURIComponent(mode)}`,{method:'POST',headers:h,body,cache:'no-store'});
-    const out=await r.json().catch(()=>({}));
+  async function callAI(mode,body){
+    const token=await getToken();
+    const url=`/api/aria-ai?mode=${encodeURIComponent(mode)}&t=${encodeURIComponent(token)}`;
+    const r=await fetch(url,{method:'POST',body,cache:'no-store',credentials:'same-origin'});
+    const text=await r.text();
+    let out={};try{out=text?JSON.parse(text):{}}catch{out={detail:text||'پاسخ نامعتبر از سرور'}}
     if(!r.ok){
       if(out?.error==='OPENAI_API_KEY_MISSING')throw new Error('کلید هوش مصنوعی هنوز روی سرور تنظیم نشده.');
-      throw new Error(out?.detail||out?.error||'خطا در پردازش هوشمند');
+      throw new Error(out?.detail||out?.error||`خطای سرور (${r.status})`);
     }
     return out;
   }
@@ -65,7 +66,7 @@
       const btn=$('ariaHandRead'),msg=$('ariaHandMsg');
       try{
         btn.disabled=true;msg.textContent='در حال خواندن دست‌خط فارسی...';
-        const out=await callAI('handwriting',JSON.stringify({image:c.toDataURL('image/png')}),'application/json');
+        const out=await callAI('handwriting',JSON.stringify({image:c.toDataURL('image/png')}));
         const text=(out.text||'').trim();
         if(!text)throw new Error('متنی تشخیص داده نشد.');
         $('ariaAskText').value=text;$('ariaAskText').dir='rtl';$('ariaAskText').lang='fa';
@@ -77,7 +78,7 @@
 
   async function startRecording(){
     if(recording)return;
-    if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder){throw new Error('ضبط صدا در این مرورگر پشتیبانی نمی‌شود.');}
+    if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder)throw new Error('ضبط صدا در این مرورگر پشتیبانی نمی‌شود.');
     stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}});
     const preferred=['audio/mp4','audio/webm;codecs=opus','audio/webm'];
     const mime=preferred.find(x=>MediaRecorder.isTypeSupported?.(x))||'';
@@ -90,7 +91,7 @@
         const blob=new Blob(chunks,{type});
         if(blob.size<500)throw new Error('صدای کافی ضبط نشد.');
         btn.disabled=true;btn.textContent='⏳ تبدیل به متن...';setMsg('در حال تبدیل صدای فارسی به متن...');
-        const out=await callAI('transcribe',blob,type);
+        const out=await callAI('transcribe',blob);
         const text=(out.text||'').trim();if(!text)throw new Error('متنی از صدا تشخیص داده نشد.');
         $('ariaAskText').value=text;$('ariaAskText').dir='rtl';$('ariaAskText').lang='fa';setMsg('صدای فارسی به متن تبدیل شد ✓',true);
       }catch(e){setMsg(e.message||String(e))}finally{
@@ -109,10 +110,7 @@
     vb.style.display='';vb.disabled=false;vb.textContent='🎙 گفتن';
     vb.onclick=async()=>{try{if(recording)stopRecording();else await startRecording()}catch(e){setMsg(e.message||String(e));recording=false;vb.textContent='🎙 گفتن'}};
     installHandwritingDialog();
-    if(!$('ariaHandwritingBtn')){
-      const b=document.createElement('button');b.id='ariaHandwritingBtn';b.type='button';b.textContent='✍️ دست‌خط فارسی';b.onclick=()=>window.ARIA_openHandwriting();
-      vb.parentElement?.insertBefore(b,vb.nextSibling);
-    }
+    if(!$('ariaHandwritingBtn')){const b=document.createElement('button');b.id='ariaHandwritingBtn';b.type='button';b.textContent='✍️ دست‌خط فارسی';b.onclick=()=>window.ARIA_openHandwriting();vb.parentElement?.insertBefore(b,vb.nextSibling)}
     setMsg('ورودی فارسی آماده است: صدا را ضبط کن یا از کادر دست‌خط فارسی استفاده کن.');
   }
 
