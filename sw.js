@@ -1,4 +1,4 @@
-const CACHE='aria-cloud-v13';
+const CACHE='aria-cloud-v15';
 const CAL_CACHE='aria-calendar-v1';
 const ASSETS=['./','./index.html','./manifest.webmanifest','./icon.svg','./cloud-config.js','./cloud-sync.js'];
 
@@ -29,9 +29,6 @@ async function fetchWithRetry(request, tries=3){
 
 self.addEventListener('fetch',e=>{
   const u=new URL(e.request.url);
-
-  // Persian calendar API: retry network, keep last successful month locally,
-  // and fall back to cached events when the API is temporarily unavailable.
   if(u.hostname==='persian-calendar-api.sajjadth.workers.dev'){
     e.respondWith((async()=>{
       const cache=await caches.open(CAL_CACHE);
@@ -43,15 +40,11 @@ self.addEventListener('fetch',e=>{
       }catch(_){
         const cached=await cache.match(key);
         if(cached) return cached;
-        return new Response(JSON.stringify({days:[]}),{
-          status:200,
-          headers:{'Content-Type':'application/json'}
-        });
+        return new Response(JSON.stringify({days:[]}),{status:200,headers:{'Content-Type':'application/json'}});
       }
     })());
     return;
   }
-
   const fresh = u.pathname.endsWith('/index.html') || u.pathname.endsWith('/cloud-sync.js') || u.pathname==='/' || u.pathname==='';
   if(fresh){
     e.respondWith(fetch(e.request).then(r=>{
@@ -66,17 +59,8 @@ self.addEventListener('fetch',e=>{
 
 self.addEventListener('push', event => {
   let data = {};
-  try { data = event.data ? event.data.json() : {}; } catch(e) {
-    data = { title: 'ARIA', body: event.data ? event.data.text() : 'یادآوری جدید' };
-  }
-  const options = {
-    body: data.body || 'یک یادآوری داری',
-    icon: './icon.svg',
-    badge: './icon.svg',
-    tag: data.tag || 'aria-reminder',
-    renotify: true,
-    data: data.url || './'
-  };
+  try { data = event.data ? event.data.json() : {}; } catch(e) { data = { title: 'ARIA', body: event.data ? event.data.text() : 'یادآوری جدید' }; }
+  const options = {body:data.body||'یک یادآوری داری',icon:'./icon.svg',badge:'./icon.svg',tag:data.tag||'aria-reminder',renotify:true,data:data.url||'./'};
   event.waitUntil(self.registration.showNotification(data.title || 'ARIA', options));
 });
 
