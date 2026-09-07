@@ -7,7 +7,7 @@ window.ARIA_CLOUD = {
 };
 
 (async()=>{
-  const marker='ARIA_SW_PURGED_V26';
+  const marker='ARIA_SW_PURGED_HAND_LOCAL_1';
   try{
     if(!localStorage.getItem(marker)){
       localStorage.setItem(marker,'1');
@@ -23,7 +23,7 @@ window.ARIA_CLOUD = {
   }catch(e){console.warn('ARIA reset',e)}
 
   window.addEventListener('load',()=>setTimeout(()=>{
-    document.querySelectorAll('script[data-aria-ai-input],script[data-aria-voice-guard]').forEach(x=>x.remove());
+    document.querySelectorAll('script[data-aria-ai-input],script[data-aria-voice-guard],script[data-aria-hand-local]').forEach(x=>x.remove());
     const s=document.createElement('script');
     s.src='./ai-input.js?v=26';
     s.defer=true;
@@ -34,6 +34,11 @@ window.ARIA_CLOUD = {
       g.defer=true;
       g.dataset.ariaVoiceGuard='1';
       document.head.appendChild(g);
+      const h=document.createElement('script');
+      h.src='./handwriting-local.js?v=1';
+      h.defer=true;
+      h.dataset.ariaHandLocal='1';
+      document.head.appendChild(h);
     };
     document.head.appendChild(s);
   },350));
