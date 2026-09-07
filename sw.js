@@ -1,4 +1,4 @@
-const CACHE='aria-cloud-v19';
+const CACHE='aria-cloud-v20';
 const CAL_CACHE='aria-calendar-v1';
 const ASSETS=['./','./index.html','./manifest.webmanifest','./icon.svg','./cloud-config.js','./cloud-sync.js','./ai-input.js'];
 
@@ -47,6 +47,9 @@ self.addEventListener('fetch',e=>{
   }
 
   if(u.origin!==self.location.origin) return;
+
+  // AI proxy must always go straight to Vercel and never be cached.
+  if(u.pathname==='/api/aria-ai') return;
 
   const fresh = u.pathname.endsWith('/index.html') || u.pathname.endsWith('/cloud-sync.js') || u.pathname.endsWith('/cloud-config.js') || u.pathname.endsWith('/ai-input.js') || u.pathname==='/' || u.pathname==='';
   if(fresh){
