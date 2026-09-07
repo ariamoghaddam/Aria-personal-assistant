@@ -34,7 +34,7 @@ window.ARIA_CLOUD = {
   window.addEventListener('load',()=>setTimeout(async()=>{
     document.querySelectorAll('script[data-aria-ai-input],script[data-aria-voice-guard],script[data-aria-hand-local],script[data-aria-brain]').forEach(x=>x.remove());
 
-    load('./aria-brain.js?v=1','ariaBrain').catch(e=>console.error('ARIA brain load failed',e));
+    load('./aria-brain.js?v=2','ariaBrain').catch(e=>console.error('ARIA brain load failed',e));
     load('./handwriting-local.js?v=2','ariaHandLocal').catch(e=>console.error('ARIA handwriting load failed',e));
 
     try{
