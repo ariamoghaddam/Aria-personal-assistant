@@ -1,10 +1,12 @@
 (function(){
   if(window.__ARIA_BRAIN_AUTO_BOOT)return;window.__ARIA_BRAIN_AUTO_BOOT=true;
   const load=src=>new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=reject;document.head.appendChild(s)});
+  const loadCss=href=>new Promise((resolve,reject)=>{const l=document.createElement('link');l.rel='stylesheet';l.href=href;l.onload=resolve;l.onerror=reject;document.head.appendChild(l)});
   (async()=>{
     try{
       await load('./aria-brain-core-v3.js?v=1');
       await load('./aria-brain-auto.js?v=1');
+      await loadCss('./aria-brain-position.css?v=1');
       const note=document.createElement('div');
       note.id='ariaBrainAutoNote';
       note.textContent='ARIA روی حالت خودکار است: تغییرات پیشنهادی غیرحذفی را خودش اعمال می‌کند.';
