@@ -1,4 +1,4 @@
-const CACHE='aria-cloud-v17';
+const CACHE='aria-cloud-v18';
 const CAL_CACHE='aria-calendar-v1';
 const ASSETS=['./','./index.html','./manifest.webmanifest','./icon.svg','./cloud-config.js','./cloud-sync.js','./ai-input.js'];
 
@@ -45,13 +45,21 @@ self.addEventListener('fetch',e=>{
     })());
     return;
   }
+
+  // Let browser handle all other cross-origin requests directly.
+  // This is important for authenticated Supabase Edge Function calls on iPad/Safari.
+  if(u.origin!==self.location.origin) return;
+
   const fresh = u.pathname.endsWith('/index.html') || u.pathname.endsWith('/cloud-sync.js') || u.pathname.endsWith('/cloud-config.js') || u.pathname.endsWith('/ai-input.js') || u.pathname==='/' || u.pathname==='';
   if(fresh){
     e.respondWith(fetch(e.request).then(r=>{
       const copy=r.clone();
       caches.open(CACHE).then(c=>c.put(e.request,copy));
       return r;
-    }).catch(()=>caches.match(e.request)));
+    }).catch(async()=>{
+      const cached=await caches.match(e.request);
+      return cached || new Response('Offline',{status:503});
+    }));
     return;
   }
   e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)));
