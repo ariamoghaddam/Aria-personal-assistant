@@ -7,7 +7,7 @@ window.ARIA_CLOUD = {
 };
 
 (async()=>{
-  const marker='ARIA_SW_PURGED_V25';
+  const marker='ARIA_SW_PURGED_V26';
   try{
     if(!localStorage.getItem(marker)){
       localStorage.setItem(marker,'1');
@@ -25,12 +25,12 @@ window.ARIA_CLOUD = {
   window.addEventListener('load',()=>setTimeout(()=>{
     document.querySelectorAll('script[data-aria-ai-input],script[data-aria-voice-guard]').forEach(x=>x.remove());
     const s=document.createElement('script');
-    s.src='./ai-input.js?v=25';
+    s.src='./ai-input.js?v=26';
     s.defer=true;
     s.dataset.ariaAiInput='1';
     s.onload=()=>{
       const g=document.createElement('script');
-      g.src='./voice-guard.js?v=25';
+      g.src='./voice-guard.js?v=26';
       g.defer=true;
       g.dataset.ariaVoiceGuard='1';
       document.head.appendChild(g);
