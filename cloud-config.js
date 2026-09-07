@@ -7,7 +7,7 @@ window.ARIA_CLOUD = {
 };
 
 (async()=>{
-  const marker='ARIA_SW_PURGED_FOCUS_V2';
+  const marker='ARIA_SW_PURGED_FOCUS_RESTORE_V3';
   try{
     if(!localStorage.getItem(marker)){
       localStorage.setItem(marker,'1');
@@ -37,8 +37,8 @@ window.ARIA_CLOUD = {
     await load('./theme-ui.js?v=1','ariaTheme').catch(e=>console.error('ARIA theme load failed',e));
     load('./settings-ui.js?v=2','ariaSettings').catch(e=>console.error('ARIA settings load failed',e));
     load('./aria-brain.js?v=3','ariaBrain').catch(e=>console.error('ARIA brain load failed',e));
-    await load('./focus-center.js?v=1','ariaFocus').catch(e=>console.error('ARIA focus load failed',e));
-    load('./focus-distraction-enhance.js?v=1','ariaFocusDistraction').catch(e=>console.error('ARIA focus distraction load failed',e));
+    await load('./focus-center.js?v=restore3','ariaFocus').catch(e=>console.error('ARIA focus load failed',e));
+    load('./focus-distraction-enhance.js?v=restore3','ariaFocusDistraction').catch(e=>console.error('ARIA focus distraction load failed',e));
     load('./handwriting-local.js?v=2','ariaHandLocal').catch(e=>console.error('ARIA handwriting load failed',e));
 
     try{
