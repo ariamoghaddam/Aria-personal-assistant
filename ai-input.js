@@ -18,9 +18,7 @@
     if(!obj||depth>6)return '';
     if(typeof obj==='object'){
       if(typeof obj.access_token==='string'&&obj.access_token.trim())return obj.access_token.trim();
-      for(const k of Object.keys(obj)){
-        const v=findAccessToken(obj[k],depth+1);if(v)return v;
-      }
+      for(const k of Object.keys(obj)){const v=findAccessToken(obj[k],depth+1);if(v)return v}
     }
     return '';
   }
@@ -37,13 +35,24 @@
     throw new Error('برای استفاده از هوش مصنوعی باید یک‌بار از حساب ARIA خارج و دوباره وارد شوی.');
   }
 
+  function xhrPost(url,body){
+    return new Promise((resolve,reject)=>{
+      const x=new XMLHttpRequest();
+      x.open('POST',url,true);
+      x.timeout=90000;
+      x.onload=()=>resolve({status:x.status,text:x.responseText||''});
+      x.onerror=()=>reject(new Error('ارتباط با سرور برقرار نشد.'));
+      x.ontimeout=()=>reject(new Error('پاسخ سرور طول کشید؛ دوباره امتحان کن.'));
+      try{x.send(body)}catch(e){reject(e)}
+    });
+  }
+
   async function callAI(mode,body){
     const token=getToken();
-    const url=`/api/aria-ai?mode=${encodeURIComponent(mode)}&t=${encodeURIComponent(token)}`;
-    const r=await fetch(url,{method:'POST',body,cache:'no-store',credentials:'same-origin'});
-    const text=await r.text();
-    let out={};try{out=text?JSON.parse(text):{}}catch{out={detail:text||'پاسخ نامعتبر از سرور'}}
-    if(!r.ok){
+    const url=`/api/aria-ai?mode=${encodeURIComponent(mode)}&t=${encodeURIComponent(token)}&v=22`;
+    const r=await xhrPost(url,body);
+    let out={};try{out=r.text?JSON.parse(r.text):{}}catch{out={detail:r.text||'پاسخ نامعتبر از سرور'}}
+    if(r.status<200||r.status>=300){
       if(out?.error==='OPENAI_API_KEY_MISSING')throw new Error('کلید هوش مصنوعی هنوز روی سرور تنظیم نشده.');
       if(out?.error==='unauthorized')throw new Error('ورود ARIA منقضی شده؛ یک‌بار از حساب خارج و دوباره وارد شو.');
       throw new Error(out?.detail||out?.error||`خطای سرور (${r.status})`);
@@ -54,13 +63,7 @@
   function installHandwritingDialog(){
     if($('ariaHandwritingDialog'))return;
     const d=document.createElement('dialog');d.id='ariaHandwritingDialog';
-    d.innerHTML=`<div style="min-width:min(720px,86vw)">
-      <div class="sectionHead"><b>✍️ دست‌خط فارسی</b><button class="ghost" type="button" id="ariaHandClose">بستن</button></div>
-      <div class="sub" style="margin:8px 0">با Apple Pencil یا انگشت داخل کادر بنویس؛ ARIA خودش متن فارسی را می‌خواند.</div>
-      <canvas id="ariaHandCanvas" style="display:block;width:100%;height:300px;background:#fff;border-radius:14px;touch-action:none"></canvas>
-      <div class="ariaMenu"><button type="button" id="ariaHandClear">پاک کردن</button><button type="button" class="primary" id="ariaHandRead">خواندن دست‌خط</button></div>
-      <div id="ariaHandMsg" class="sub"></div>
-    </div>`;
+    d.innerHTML=`<div style="min-width:min(720px,86vw)"><div class="sectionHead"><b>✍️ دست‌خط فارسی</b><button class="ghost" type="button" id="ariaHandClose">بستن</button></div><div class="sub" style="margin:8px 0">با Apple Pencil یا انگشت داخل کادر بنویس؛ ARIA خودش متن فارسی را می‌خواند.</div><canvas id="ariaHandCanvas" style="display:block;width:100%;height:300px;background:#fff;border-radius:14px;touch-action:none"></canvas><div class="ariaMenu"><button type="button" id="ariaHandClear">پاک کردن</button><button type="button" class="primary" id="ariaHandRead">خواندن دست‌خط</button></div><div id="ariaHandMsg" class="sub"></div></div>`;
     document.body.appendChild(d);
     const c=$('ariaHandCanvas'),ctx=c.getContext('2d');let drawing=false,last=null;
     function resize(){const r=c.getBoundingClientRect(),q=Math.max(1,window.devicePixelRatio||1);c.width=Math.round(r.width*q);c.height=Math.round(300*q);ctx.setTransform(q,0,0,q,0,0);ctx.fillStyle='#fff';ctx.fillRect(0,0,r.width,300);ctx.strokeStyle='#111';ctx.lineWidth=3;ctx.lineCap='round';ctx.lineJoin='round'}
