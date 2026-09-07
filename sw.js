@@ -1,6 +1,6 @@
-const CACHE='aria-cloud-v16';
+const CACHE='aria-cloud-v17';
 const CAL_CACHE='aria-calendar-v1';
-const ASSETS=['./','./index.html','./manifest.webmanifest','./icon.svg','./cloud-config.js','./cloud-sync.js'];
+const ASSETS=['./','./index.html','./manifest.webmanifest','./icon.svg','./cloud-config.js','./cloud-sync.js','./ai-input.js'];
 
 self.addEventListener('install',e=>{
   self.skipWaiting();
@@ -45,7 +45,7 @@ self.addEventListener('fetch',e=>{
     })());
     return;
   }
-  const fresh = u.pathname.endsWith('/index.html') || u.pathname.endsWith('/cloud-sync.js') || u.pathname.endsWith('/cloud-config.js') || u.pathname==='/' || u.pathname==='';
+  const fresh = u.pathname.endsWith('/index.html') || u.pathname.endsWith('/cloud-sync.js') || u.pathname.endsWith('/cloud-config.js') || u.pathname.endsWith('/ai-input.js') || u.pathname==='/' || u.pathname==='';
   if(fresh){
     e.respondWith(fetch(e.request).then(r=>{
       const copy=r.clone();
