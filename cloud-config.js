@@ -7,7 +7,7 @@ window.ARIA_CLOUD = {
 };
 
 (async()=>{
-  const marker='ARIA_SW_PURGED_HAND_LOCAL_1';
+  const marker='ARIA_SW_PURGED_HAND_LOCAL_2';
   try{
     if(!localStorage.getItem(marker)){
       localStorage.setItem(marker,'1');
@@ -22,24 +22,27 @@ window.ARIA_CLOUD = {
     }
   }catch(e){console.warn('ARIA reset',e)}
 
-  window.addEventListener('load',()=>setTimeout(()=>{
-    document.querySelectorAll('script[data-aria-ai-input],script[data-aria-voice-guard],script[data-aria-hand-local]').forEach(x=>x.remove());
+  const load=(src,key)=>new Promise((resolve,reject)=>{
     const s=document.createElement('script');
-    s.src='./ai-input.js?v=26';
+    s.src=src;
     s.defer=true;
-    s.dataset.ariaAiInput='1';
-    s.onload=()=>{
-      const g=document.createElement('script');
-      g.src='./voice-guard.js?v=26';
-      g.defer=true;
-      g.dataset.ariaVoiceGuard='1';
-      document.head.appendChild(g);
-      const h=document.createElement('script');
-      h.src='./handwriting-local.js?v=1';
-      h.defer=true;
-      h.dataset.ariaHandLocal='1';
-      document.head.appendChild(h);
-    };
+    if(key)s.dataset[key]='1';
+    s.onload=resolve;s.onerror=reject;
     document.head.appendChild(s);
-  },350));
+  });
+
+  window.addEventListener('load',()=>setTimeout(async()=>{
+    document.querySelectorAll('script[data-aria-ai-input],script[data-aria-voice-guard],script[data-aria-hand-local]').forEach(x=>x.remove());
+
+    // Handwriting is loaded independently so it does not depend on AI/voice timing.
+    load('./handwriting-local.js?v=2','ariaHandLocal').catch(e=>console.error('ARIA handwriting load failed',e));
+
+    try{
+      await load('./ai-input.js?v=26','ariaAiInput');
+    }catch(e){
+      console.error('ARIA ai input load failed',e);
+    }
+
+    load('./voice-guard.js?v=26','ariaVoiceGuard').catch(e=>console.error('ARIA voice load failed',e));
+  },250));
 })();
