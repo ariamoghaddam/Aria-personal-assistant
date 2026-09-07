@@ -23,13 +23,13 @@
     if(error)throw error;
     const token=data?.session?.access_token;
     if(!token)throw new Error('برای استفاده از هوش مصنوعی باید وارد حساب ARIA باشی.');
-    return {Authorization:`Bearer ${token}`,apikey:cfg.supabaseAnonKey};
+    return {Authorization:`Bearer ${token}`};
   }
 
   async function callAI(mode,body,contentType){
     const h=await getAuthHeaders();
     if(contentType)h['Content-Type']=contentType;
-    const r=await fetch(`${cfg.supabaseUrl}/functions/v1/aria-ai?mode=${encodeURIComponent(mode)}`,{method:'POST',headers:h,body});
+    const r=await fetch(`/api/aria-ai?mode=${encodeURIComponent(mode)}`,{method:'POST',headers:h,body,cache:'no-store'});
     const out=await r.json().catch(()=>({}));
     if(!r.ok){
       if(out?.error==='OPENAI_API_KEY_MISSING')throw new Error('کلید هوش مصنوعی هنوز روی سرور تنظیم نشده.');
@@ -72,7 +72,6 @@
         msg.textContent='خوانده شد ✓';setMsg('دست‌خط به متن فارسی تبدیل شد.',true);d.close();
       }catch(e){msg.textContent=e.message||String(e)}finally{btn.disabled=false}
     };
-    d.addEventListener('close',()=>{});
     window.ARIA_openHandwriting=()=>{d.showModal();setTimeout(resize,60)};
   }
 
@@ -107,16 +106,13 @@
     if(!await waitForAsk())return;
     const ta=$('ariaAskText'),vb=$('ariaVoiceBtn');
     ta.setAttribute('lang','fa');ta.setAttribute('dir','rtl');ta.setAttribute('inputmode','text');ta.style.textAlign='right';ta.placeholder='اینجا فارسی تایپ کن؛ یا از «گفتن» و «دست‌خط فارسی» استفاده کن.';
-
     vb.style.display='';vb.disabled=false;vb.textContent='🎙 گفتن';
     vb.onclick=async()=>{try{if(recording)stopRecording();else await startRecording()}catch(e){setMsg(e.message||String(e));recording=false;vb.textContent='🎙 گفتن'}};
-
     installHandwritingDialog();
     if(!$('ariaHandwritingBtn')){
       const b=document.createElement('button');b.id='ariaHandwritingBtn';b.type='button';b.textContent='✍️ دست‌خط فارسی';b.onclick=()=>window.ARIA_openHandwriting();
       vb.parentElement?.insertBefore(b,vb.nextSibling);
     }
-
     setMsg('ورودی فارسی آماده است: صدا را ضبط کن یا از کادر دست‌خط فارسی استفاده کن.');
   }
 
