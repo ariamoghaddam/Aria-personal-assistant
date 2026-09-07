@@ -7,11 +7,10 @@ window.ARIA_CLOUD = {
 };
 
 // Load the latest Persian AI input layer after the main app starts.
-// v20 intentionally sends no custom browser headers to avoid WebKit ByteString errors.
 window.addEventListener('load',()=>setTimeout(()=>{
   document.querySelectorAll('script[data-aria-ai-input]').forEach(x=>x.remove());
   const s=document.createElement('script');
-  s.src='./ai-input.js?v=20';
+  s.src='./ai-input.js?v=21';
   s.defer=true;
   s.dataset.ariaAiInput='1';
   document.head.appendChild(s);
