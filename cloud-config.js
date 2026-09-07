@@ -7,7 +7,7 @@ window.ARIA_CLOUD = {
 };
 
 (async()=>{
-  const marker='ARIA_SW_PURGED_MUSIC_METRONOME_V2';
+  const marker='ARIA_SW_PURGED_SAFE_AI_V1';
   try{
     if(!localStorage.getItem(marker)){
       localStorage.setItem(marker,'1');
@@ -36,7 +36,7 @@ window.ARIA_CLOUD = {
 
     await load('./theme-ui.js?v=1','ariaTheme').catch(e=>console.error('ARIA theme load failed',e));
     load('./settings-ui.js?v=2','ariaSettings').catch(e=>console.error('ARIA settings load failed',e));
-    load('./aria-brain.js?v=3','ariaBrain').catch(e=>console.error('ARIA brain load failed',e));
+    load('./aria-brain.js?v=4','ariaBrain').catch(e=>console.error('ARIA brain load failed',e));
     await load('./focus-center.js?v=entry4','ariaFocus').catch(e=>console.error('ARIA focus load failed',e));
     load('./focus-distraction-enhance.js?v=entry4','ariaFocusDistraction').catch(e=>console.error('ARIA focus distraction load failed',e));
     load('./focus-entry-fix.js?v=1','ariaFocusEntry').catch(e=>console.error('ARIA focus entry failed',e));
