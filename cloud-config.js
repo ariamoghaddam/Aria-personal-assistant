@@ -7,7 +7,7 @@ window.ARIA_CLOUD = {
 };
 
 (async()=>{
-  const marker='ARIA_SW_PURGED_SETTINGS_V1';
+  const marker='ARIA_SW_PURGED_SETTINGS_V2';
   try{
     if(!localStorage.getItem(marker)){
       localStorage.setItem(marker,'1');
@@ -35,7 +35,7 @@ window.ARIA_CLOUD = {
     document.querySelectorAll('script[data-aria-ai-input],script[data-aria-voice-guard],script[data-aria-hand-local],script[data-aria-brain],script[data-aria-theme],script[data-aria-settings]').forEach(x=>x.remove());
 
     await load('./theme-ui.js?v=1','ariaTheme').catch(e=>console.error('ARIA theme load failed',e));
-    load('./settings-ui.js?v=1','ariaSettings').catch(e=>console.error('ARIA settings load failed',e));
+    load('./settings-ui.js?v=2','ariaSettings').catch(e=>console.error('ARIA settings load failed',e));
     load('./aria-brain.js?v=3','ariaBrain').catch(e=>console.error('ARIA brain load failed',e));
     load('./handwriting-local.js?v=2','ariaHandLocal').catch(e=>console.error('ARIA handwriting load failed',e));
 
