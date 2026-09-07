@@ -6,9 +6,8 @@ window.ARIA_CLOUD = {
   cloudEnabled: true
 };
 
-// iOS/PWA hard reset for stale Service Workers that were constructing invalid Request headers.
 (async()=>{
-  const marker='ARIA_SW_PURGED_V24';
+  const marker='ARIA_SW_PURGED_V25';
   try{
     if(!localStorage.getItem(marker)){
       localStorage.setItem(marker,'1');
@@ -20,19 +19,22 @@ window.ARIA_CLOUD = {
         const keys=await caches.keys();
         await Promise.all(keys.map(k=>caches.delete(k).catch(()=>false)));
       }
-      const u=new URL(location.href);
-      u.searchParams.set('ariafresh','24');
-      location.replace(u.toString());
-      return;
     }
-  }catch(e){ console.warn('ARIA cache reset',e); }
+  }catch(e){console.warn('ARIA reset',e)}
 
   window.addEventListener('load',()=>setTimeout(()=>{
-    document.querySelectorAll('script[data-aria-ai-input]').forEach(x=>x.remove());
+    document.querySelectorAll('script[data-aria-ai-input],script[data-aria-voice-guard]').forEach(x=>x.remove());
     const s=document.createElement('script');
-    s.src='./ai-input.js?v=24';
+    s.src='./ai-input.js?v=25';
     s.defer=true;
     s.dataset.ariaAiInput='1';
+    s.onload=()=>{
+      const g=document.createElement('script');
+      g.src='./voice-guard.js?v=25';
+      g.defer=true;
+      g.dataset.ariaVoiceGuard='1';
+      document.head.appendChild(g);
+    };
     document.head.appendChild(s);
   },350));
 })();
