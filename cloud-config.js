@@ -7,7 +7,7 @@ window.ARIA_CLOUD = {
 };
 
 (async()=>{
-  const marker='ARIA_SW_PURGED_MUSIC_METRONOME_V1';
+  const marker='ARIA_SW_PURGED_MUSIC_METRONOME_V2';
   try{
     if(!localStorage.getItem(marker)){
       localStorage.setItem(marker,'1');
@@ -43,7 +43,7 @@ window.ARIA_CLOUD = {
     load('./productivity-suite.js?v=1','ariaProductivity').catch(e=>console.error('ARIA productivity load failed',e));
     load('./project-price-book.js?v=1','ariaPriceBook').catch(e=>console.error('ARIA price book load failed',e));
     await load('./music-suite.js?v=1','ariaMusicPro').catch(e=>console.error('ARIA music pro load failed',e));
-    load('./music-metronome.js?v=1','ariaMetronome').catch(e=>console.error('ARIA metronome load failed',e));
+    load('./music-metronome.js?v=2','ariaMetronome').catch(e=>console.error('ARIA metronome load failed',e));
     load('./handwriting-local.js?v=2','ariaHandLocal').catch(e=>console.error('ARIA handwriting load failed',e));
 
     try{
