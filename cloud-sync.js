@@ -75,7 +75,7 @@
   function queueFullSync(dbx){clearTimeout(timer);timer=setTimeout(()=>pushSnapshot(dbx),500)}
   window.ARIA_SYNC={init,signIn,signUp,resendConfirmation,requestPasswordReset,resetPassword,updatePassword,updateProjectColor,deleteProject,queueFullSync,pull};
 
-  window.addEventListener('load',()=>setTimeout(installEnhancements,150));
+  window.addEventListener('load',()=>setTimeout(installEnhancements,180));
   function installEnhancements(){
     try{
       document.getElementById('phoneLoginBtn')?.remove();
@@ -95,12 +95,30 @@
         };
       }
 
-      renderProjects=function(){
-        return `<section class="card section"><div class="sectionHead"><b>پروژه‌ها و پوشه‌ها</b><button onclick="openProject()">＋ پروژه</button></div>
-        <div class="projectGrid">${db.projects.map(p=>{const n=db.tasks.filter(t=>t.project===p.id&&t.status!=='done').length,c=p.color||'#2dd4bf';return `<div class="project" style="border-top:4px solid ${c}" onclick="currentProject='${p.id}';view='projects';render()"><b>${esc(p.name)}</b><small>${n} کار باز • ${p.area==='music'?'موسیقی':p.area==='work'?'کاری':p.area==='personal'?'شخصی':'عمومی'}</small>${p.desc?`<div class="desc">${esc(p.desc)}</div>`:''}<div style="display:flex;gap:7px;align-items:center;margin-top:10px" onclick="event.stopPropagation()"><input type="color" value="${c}" style="width:38px;height:30px;padding:2px" onchange="ARIA_setProjectColor('${p.id}',this.value)"><button class="danger" style="font-size:10px;padding:6px 8px" onclick="ARIA_deleteProject('${p.id}')">حذف پروژه</button></div></div>`}).join('')}</div></section>`+(currentProject?renderTasksSection('کارهای '+projectName(currentProject)):'');
-      };
       window.ARIA_setProjectColor=async(id,color)=>{let p=db.projects.find(x=>x.id===id);if(!p)return;p.color=color;save();await updateProjectColor(id,color)};
       window.ARIA_deleteProject=async id=>{let p=db.projects.find(x=>x.id===id);if(!p||!confirm(`پروژه «${p.name}» حذف شود؟`))return;await deleteProject(id);db.projects=db.projects.filter(x=>x.id!==id);db.tasks.forEach(t=>{if(t.project===id)t.project='general'});if(currentProject===id)currentProject=null;save()};
+      window.ARIA_openProject=id=>{currentProject=id;view='projects';render()};
+      window.ARIA_backProjects=()=>{currentProject=null;view='projects';render()};
+      window.ARIA_newTaskInProject=id=>{currentProject=id;openTask();setTimeout(()=>{if(window.project)project.value=id},20)};
+
+      renderProjects=function(){
+        if(currentProject){
+          const p=db.projects.find(x=>x.id===currentProject);
+          if(!p){currentProject=null;return renderProjects()}
+          const c=p.color||'#2dd4bf';
+          const tasks=db.tasks.filter(t=>t.project===p.id).sort((a,b)=>(a.date||'9999').localeCompare(b.date||'9999'));
+          return `<section class="card section">
+            <div class="sectionHead">
+              <div style="display:flex;align-items:center;gap:10px"><button class="ghost" onclick="ARIA_backProjects()">← پروژه‌ها</button><div><b style="font-size:18px">${esc(p.name)}</b><div class="sub">${p.desc?esc(p.desc):'پوشه پروژه'}</div></div></div>
+              <button class="primary" onclick="ARIA_newTaskInProject('${p.id}')">＋ کار جدید در این پروژه</button>
+            </div>
+            <div style="height:5px;border-radius:8px;background:${c};margin:12px 0"></div>
+            <div class="taskList">${tasks.length?tasks.map(renderTask).join(''):'<div class="empty">هنوز کاری داخل این پروژه نیست. از دکمه «کار جدید در این پروژه» استفاده کن.</div>'}</div>
+          </section>`;
+        }
+        return `<section class="card section"><div class="sectionHead"><b>پروژه‌ها و پوشه‌ها</b><button onclick="openProject()">＋ پروژه</button></div>
+        <div class="projectGrid">${db.projects.map(p=>{const n=db.tasks.filter(t=>t.project===p.id&&t.status!=='done').length,c=p.color||'#2dd4bf';return `<div class="project" style="border-top:4px solid ${c}" onclick="ARIA_openProject('${p.id}')"><b>📁 ${esc(p.name)}</b><small>${n} کار باز • ${p.area==='music'?'موسیقی':p.area==='work'?'کاری':p.area==='personal'?'شخصی':'عمومی'}</small>${p.desc?`<div class="desc">${esc(p.desc)}</div>`:''}<div style="display:flex;gap:7px;align-items:center;margin-top:10px" onclick="event.stopPropagation()"><input type="color" value="${c}" style="width:38px;height:30px;padding:2px" onchange="ARIA_setProjectColor('${p.id}',this.value)"><button class="danger" style="font-size:10px;padding:6px 8px" onclick="ARIA_deleteProject('${p.id}')">حذف پروژه</button></div></div>`}).join('')}</div></section>`;
+      };
 
       const originalRender=render;
       render=function(){
@@ -125,32 +143,63 @@
 
       const eventCache={},loading={};
       function nd(s){return String(s??'').replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d))}
-      function parseEvents(payload){
+      function parseApiMonth(data){
         const out={};
-        const add=(d,n,h)=>{d=parseInt(nd(d),10);n=String(n||'').trim();if(!d||d>31||!n)return;let a=(out[d]||=[]);if(!a.some(x=>x.name===n))a.push({name:n,holiday:!!h})};
-        if(Array.isArray(payload?.days)){
-          payload.days.forEach(row=>{
-            if(row?.disabled)return;
-            const d=row?.day?.jalali??row?.jalali_day??row?.day;
-            const list=row?.events?.list;
-            if(Array.isArray(list))list.forEach((e,i)=>{const name=typeof e==='string'?e:(e?.event??e?.name??e?.event_name);const h=typeof e==='object'&&e?!!(e.isHoliday??e.is_holiday??e.holiday):false;add(d,name,h||((!!row?.events?.isHoliday)&&i===0))});
+        const add=(d,name,holiday)=>{d=parseInt(nd(d),10);if(!d||!name)return;(out[d]||=[]).push({name:String(name),holiday:!!holiday})};
+        const days=data?.days||data?.data?.days||[];
+        if(Array.isArray(days)){
+          days.forEach(x=>{
+            const d=x?.day?.jalali??x?.jalaliDay??x?.day;
+            const ev=x?.events?.list||x?.events||[];
+            if(Array.isArray(ev))ev.forEach(e=>add(d,e?.event||e?.name||e?.title||String(e),x?.events?.isHoliday||e?.isHoliday||e?.holiday));
           });
-          return out;
         }
-        function walk(v,day=null){if(Array.isArray(v)){v.forEach(z=>walk(z,day));return}if(!v||typeof v!=='object')return;let d=(typeof v.day==='object'?v.day?.jalali:v.day)??v.jalali_day??day;if(typeof v.date==='string'){let m=nd(v.date).match(/(?:^|[-/])(\d{1,2})$/);if(m)d=m[1]}let h=!!(v.is_holiday??v.isHoliday??v.holiday),names=[];if(v.event_name)names.push(v.event_name);if(typeof v.event==='string')names.push(v.event);if(Array.isArray(v.events))v.events.forEach(e=>names.push(typeof e==='string'?e:(e?.event||e?.name||e?.event_name||'')));if(Array.isArray(v.list))v.list.forEach(e=>add(d,typeof e==='string'?e:(e?.event||e?.name||e?.event_name||''),typeof e==='object'&&e?!!(e.isHoliday??e.is_holiday??e.holiday??h):h));if(d)names.forEach(n=>add(d,n,h));Object.entries(v).forEach(([k,z])=>{if(['day','jalali_day','date','is_holiday','isHoliday','holiday','event_name','event','events','list'].includes(k))return;walk(z,/^\d{1,2}$/.test(k)?k:d)})}
-        walk(payload);return out
+        return out;
       }
-      async function loadEvents(y,m){let k=`${y}-${m}`;if(eventCache[k]||loading[k])return;loading[k]=1;try{let r=await fetch(`https://persian-calendar-api.sajjadth.workers.dev/?year=${y}&month=${m}`,{cache:'no-store'});if(!r.ok)throw new Error('calendar api');eventCache[k]=parseEvents(await r.json())}catch(e){console.error('ARIA calendar events',e);eventCache[k]={}}finally{delete loading[k];if(view==='calendar'&&window._jy===y&&window._jm===m)render()}}
-      const originalCalDay=calDay;
-      function monthEventsHtml(y,m){const evs=eventCache[`${y}-${m}`]||{},rows=[];Object.keys(evs).map(Number).sort((a,b)=>a-b).forEach(d=>(evs[d]||[]).forEach(e=>rows.push(`<div class="task" style="padding:9px 11px;${e.holiday?'border-color:#84343d;background:#1d1215':''}"><div class="taskTop"><div class="taskTitle">${e.holiday?'🔴 ':''}${esc(e.name)}</div><span class="badge ${e.holiday?'red':''}">${faN(d)} ${jMonths[m-1]}</span></div></div>`)));return `<section class="card section"><div class="sectionHead"><b>مناسبت‌ها و تعطیلات این ماه</b><span class="sub">${loading[`${y}-${m}`]?'در حال دریافت...':faN(rows.length)+' مورد'}</span></div><div class="taskList">${loading[`${y}-${m}`]?'<div class="empty">در حال دریافت مناسبت‌ها...</div>':rows.length?rows.join(''):'<div class="empty">مناسبتی دریافت نشد.</div>'}</div></section>`}
+      async function loadEvents(y,m){
+        let k=`${y}-${m}`;if(eventCache[k]||loading[k])return;loading[k]=1;
+        try{
+          let r=await fetch(`https://persian-calendar-api.sajjadth.workers.dev/?year=${y}&month=${m}`,{cache:'no-store'});
+          if(!r.ok)throw 0;
+          eventCache[k]=parseApiMonth(await r.json());
+        }catch(_){eventCache[k]={}}
+        finally{delete loading[k];if(view==='calendar'&&window._jy===y&&window._jm===m)render()}
+      }
+
+      const dayDlg=document.createElement('dialog');dayDlg.id='ariaCalendarDay';dayDlg.innerHTML=`<div><div class="sectionHead"><b id="acdTitle"></b><button class="ghost" id="acdClose">بستن</button></div><div id="acdEvents" class="taskList" style="margin-top:12px"></div><div class="modalActions" style="margin-top:12px"><button class="primary" id="acdNewTask">＋ کار جدید برای این روز</button></div></div>`;document.body.appendChild(dayDlg);
+      let selectedIso='';
+      acdClose.onclick=()=>dayDlg.close();
+      acdNewTask.onclick=()=>{const iso=selectedIso;dayDlg.close();openTask();setTimeout(()=>{date.value=iso;dateFa.value=iso2j(iso)},30)};
+
       renderCalendar=function(){
-        let tj=d2j(new Date().getFullYear(),new Date().getMonth()+1,new Date().getDate());if(!window._jy){_jy=tj.jy;_jm=tj.jm}loadEvents(_jy,_jm);let first=jWeek(_jy,_jm,1),days=jmDays(_jy,_jm),cells=[],evs=eventCache[`${_jy}-${_jm}`]||{};for(let i=0;i<first;i++)cells.push('<div class="jday empty"></div>');
-        for(let d=1;d<=days;d++){let g=j2g(_jy,_jm,d),iso=`${g.gy}-${String(g.gm).padStart(2,'0')}-${String(g.gd).padStart(2,'0')}`,ts=db.tasks.filter(t=>t.date===iso&&t.status!=='done'),today=tj.jy===_jy&&tj.jm===_jm&&tj.jd===d,ev=evs[d]||[],hol=ev.some(e=>e.holiday);cells.push(`<div class="jday ${today?'today':''} ${ts.length?'has':''}" style="min-height:92px;${hol?'border-color:#a43d48;background:#241317':''}" onclick="ARIA_calDay('${iso}',${d})"><b>${faN(d)}</b>${ts.length?`<small>${faN(ts.length)} کار</small>`:''}${ev.slice(0,3).map(e=>`<small style="display:block;font-size:7.5px;line-height:1.25;margin-top:2px;white-space:normal;overflow:hidden;color:${e.holiday?'#ffc6cb':'#a9c7d8'}">${e.holiday?'● ':''}${esc(e.name)}</small>`).join('')}${ev.length>3?`<small style="display:block;font-size:7.5px;color:#a9c7d8">+ ${faN(ev.length-3)} مناسبت دیگر</small>`:''}</div>`)}
+        let tj=d2j(new Date().getFullYear(),new Date().getMonth()+1,new Date().getDate());
+        if(!window._jy){_jy=tj.jy;_jm=tj.jm}
+        loadEvents(_jy,_jm);
+        let first=jWeek(_jy,_jm,1),days=jmDays(_jy,_jm),cells=[],evs=eventCache[`${_jy}-${_jm}`]||{};
+        for(let i=0;i<first;i++)cells.push('<div class="jday empty"></div>');
+        for(let d=1;d<=days;d++){
+          let g=j2g(_jy,_jm,d),iso=`${g.gy}-${String(g.gm).padStart(2,'0')}-${String(g.gd).padStart(2,'0')}`,ts=db.tasks.filter(t=>t.date===iso&&t.status!=='done'),today=tj.jy===_jy&&tj.jm===_jm&&tj.jd===d,ev=evs[d]||[],hol=ev.some(e=>e.holiday);
+          cells.push(`<div class="jday ${today?'today':''} ${ts.length?'has':''}" style="${hol?'border-color:#a43d48;background:#241317':''}" onclick="ARIA_calDay('${iso}',${d})"><b>${faN(d)}</b>${ts.length?`<small>${faN(ts.length)} کار</small>`:''}${ev.slice(0,2).map(e=>`<small style="display:block;font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:${e.holiday?'#ffc6cb':'#a9c7d8'}">${e.holiday?'● ':''}${esc(e.name)}</small>`).join('')}${ev.length>2?`<small style="display:block;font-size:8px">+ ${faN(ev.length-2)} مناسبت دیگر</small>`:''}</div>`);
+        }
         let mts=db.tasks.filter(t=>t.date&&iso2j(t.date).startsWith(`${faN(_jy)}/${faN(String(_jm).padStart(2,'0'))}`)&&t.status!=='done');
-        let cnt=Object.values(evs).reduce((n,a)=>n+a.length,0);
-        return `<section class="card section"><div class="calHead"><button class="ghost" onclick="calPrev()">‹ ماه قبل</button><div style="text-align:center"><b>${jMonths[_jm-1]} ${faN(_jy)}</b><div class="sub">تقویم شمسی • تعطیلات و مناسبت‌ها ${loading[`${_jy}-${_jm}`]?'(در حال دریافت...)':cnt?`(${faN(cnt)} مناسبت)`:''}</div></div><button class="ghost" onclick="calNext()">ماه بعد ›</button></div><div class="jweek"><span>ش</span><span>ی</span><span>د</span><span>س</span><span>چ</span><span>پ</span><span>ج</span></div><div class="jcal">${cells.join('')}</div></section>${monthEventsHtml(_jy,_jm)}<section class="card section"><div class="sectionHead"><b>کارهای این ماه</b><span class="sub">${faN(mts.length)} مورد</span></div><div class="taskList">${mts.length?mts.map(renderTask).join(''):'<div class="empty">برای این ماه کاری ثبت نشده.</div>'}</div></section>`;
+        let monthEvents=Object.entries(evs).flatMap(([d,arr])=>arr.map(e=>({day:d,...e})));
+        return `<section class="card section"><div class="calHead"><button class="ghost" onclick="calPrev()">‹ ماه قبل</button><div style="text-align:center"><b>${jMonths[_jm-1]} ${faN(_jy)}</b><div class="sub">تقویم شمسی • تعطیلات و مناسبت‌ها ${loading[`${_jy}-${_jm}`]?'(در حال دریافت...)':''}</div></div><button class="ghost" onclick="calNext()">ماه بعد ›</button></div><div class="jweek"><span>ش</span><span>ی</span><span>د</span><span>س</span><span>چ</span><span>پ</span><span>ج</span></div><div class="jcal">${cells.join('')}</div></section>
+        <section class="card section"><div class="sectionHead"><b>مناسبت‌ها و تعطیلات این ماه</b><span class="sub">${faN(monthEvents.length)} مورد</span></div><div class="taskList">${monthEvents.length?monthEvents.map(e=>`<div class="task"><div class="taskTitle">${e.holiday?'🔴 ':'• '}${esc(e.name)}</div><div class="meta"><span class="badge">${faN(e.day)} ${jMonths[_jm-1]}</span>${e.holiday?'<span class="badge red">تعطیل</span>':''}</div></div>`).join(''):'<div class="empty">مناسبتی دریافت نشد.</div>'}</div></section>
+        <section class="card section"><div class="sectionHead"><b>کارهای این ماه</b><span class="sub">${faN(mts.length)} مورد</span></div><div class="taskList">${mts.length?mts.map(renderTask).join(''):'<div class="empty">برای این ماه کاری ثبت نشده.</div>'}</div></section>`;
       };
-      window.ARIA_calDay=(iso,d)=>{let a=db.tasks.filter(t=>t.date===iso),ev=(eventCache[`${_jy}-${_jm}`]||{})[d]||[],lines=[];ev.forEach(e=>lines.push((e.holiday?'🔴 ':'• ')+e.name));if(a.length)lines.push('',...a.map(x=>'✅ '+x.title));if(!lines.length)return originalCalDay(iso);alert(iso2j(iso)+'\n\n'+lines.join('\n'))};
+
+      window.ARIA_calDay=(iso,d)=>{
+        selectedIso=iso;
+        const ev=(eventCache[`${_jy}-${_jm}`]||{})[d]||[];
+        const tasks=db.tasks.filter(t=>t.date===iso);
+        acdTitle.textContent=iso2j(iso);
+        let html='';
+        if(ev.length)html+=ev.map(e=>`<div class="task"><div class="taskTitle">${e.holiday?'🔴 ':'• '}${esc(e.name)}</div>${e.holiday?'<div class="meta"><span class="badge red">تعطیل</span></div>':''}</div>`).join('');
+        if(tasks.length)html+=tasks.map(renderTask).join('');
+        if(!html)html='<div class="empty">برای این روز چیزی ثبت نشده.</div>';
+        acdEvents.innerHTML=html;
+        dayDlg.showModal();
+      };
 
       render();
     }catch(e){console.error('ARIA enhancements',e)}
