@@ -1,38 +1,16 @@
 (function(){
-  if(window.__ARIA_BRAIN_V2)return;window.__ARIA_BRAIN_V2=true;
-  const cfg=window.ARIA_CLOUD||{};
-  const $=id=>document.getElementById(id);
-  let history=[],pendingActions=[];
-
-  function getDB(){try{return typeof db!=='undefined'?db:null}catch{return null}}
-  function today(){const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10)}
-  function findToken(obj,depth=0){if(!obj||depth>6)return'';if(typeof obj==='object'){if(typeof obj.access_token==='string'&&obj.access_token.trim())return obj.access_token.trim();for(const k of Object.keys(obj)){const v=findToken(obj[k],depth+1);if(v)return v}}return''}
-  function getToken(){try{const preferred=`sb-${new URL(cfg.supabaseUrl).hostname.split('.')[0]}-auth-token`;const keys=[preferred,...Object.keys(localStorage).filter(k=>k.startsWith('sb-')&&k.includes('auth-token'))];for(const k of [...new Set(keys)]){const raw=localStorage.getItem(k);if(!raw)continue;try{const t=findToken(JSON.parse(raw));if(t)return t}catch(_){}}}catch(_){}throw new Error('برای هوش مصنوعی باید وارد حساب ARIA باشی.');}
-  function slim(v,depth=0){if(depth>4)return undefined;if(v==null||typeof v==='string'||typeof v==='number'||typeof v==='boolean')return v;if(Array.isArray(v))return v.slice(0,200).map(x=>slim(x,depth+1));if(typeof v==='object'){const o={};for(const [k,val] of Object.entries(v)){if(['drawing','attachments','image','blob','file','dataUrl'].includes(k))continue;const s=slim(val,depth+1);if(s!==undefined)o[k]=s}return o}}
-  function snapshot(){const D=getDB()||{};return{today:today(),currentView:typeof view!=='undefined'?view:null,currentProject:typeof currentProject!=='undefined'?currentProject:null,searchText:typeof searchText!=='undefined'?searchText:null,data:slim(D)};}
-
-  async function askAI(query){
-    const token=getToken();
-    const r=await fetch(`/api/aria-ai?mode=assistant&t=${encodeURIComponent(token)}&v=2`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query,context:snapshot(),history})});
-    const out=await r.json().catch(()=>({}));if(!r.ok)throw new Error(out?.detail||out?.error||`خطای سرور ${r.status}`);
-    const text=String(out.text||'').trim();pendingActions=Array.isArray(out.actions)?out.actions:[];
-    history.push({role:'user',text:query},{role:'assistant',text});history=history.slice(-16);
-    return{text,actions:pendingActions};
-  }
-
-  function localFallback(q){const D=getDB()||{},tasks=(D.tasks||[]).filter(t=>t.status!=='done'),td=today();const overdue=tasks.filter(t=>t.date&&t.date<td);if(/عقب|دیر/.test(q))return overdue.length?`کارهای عقب‌افتاده:\n${overdue.map((t,i)=>`${i+1}) ${t.title}`).join('\n')}`:'کار عقب‌افتاده نداری.';if(/امروز|اولویت|چی کار/.test(q)){const score=t=>(t.priority==='urgent'?30:t.priority==='important'?15:0)+(t.date&&t.date<td?40:0)+(t.date===td?20:0);return tasks.sort((a,b)=>score(b)-score(a)).slice(0,5).map((t,i)=>`${i+1}) ${t.title}`).join('\n')||'کار بازی نداری.'}return `ARIA به کل داده‌های برنامه وصل است: ${tasks.length} کار باز، ${overdue.length} عقب‌افتاده و ${(D.projects||[]).length} پروژه. برای تحلیل GPT واقعی، کلید OpenAI سرور باید معتبر باشد.`}
-
-  function uid2(){try{return typeof uid==='function'?uid():Math.random().toString(36).slice(2)+Date.now().toString(36)}catch{return Math.random().toString(36).slice(2)+Date.now().toString(36)}}
-  function applyActions(){const D=getDB();if(!D||!pendingActions.length)return;let n=0;for(const a of pendingActions){try{if(a.type==='create_task'&&a.title){D.tasks=D.tasks||[];D.tasks.push({id:uid2(),title:String(a.title),project:a.project||'general',area:a.area||'general',description:a.description||'',date:a.date||'',time:a.time||'',priority:a.priority||'normal',status:'todo',repeat:a.repeat||'none',subtasks:Array.isArray(a.subtasks)?a.subtasks:[],attachments:[],drawing:null,createdAt:Date.now()});n++}else if(a.type==='complete_task'&&a.id){const t=(D.tasks||[]).find(x=>x.id===a.id);if(t){t.status='done';n++}}else if(a.type==='update_task'&&a.id){const t=(D.tasks||[]).find(x=>x.id===a.id);if(t){for(const k of ['title','project','area','description','date','time','priority','status','repeat'])if(a[k]!==undefined)t[k]=a[k];if(Array.isArray(a.subtasks))t.subtasks=a.subtasks;n++}}else if(a.type==='create_project'&&a.name){D.projects=D.projects||[];D.projects.push({id:uid2(),name:String(a.name),area:a.area||'general',desc:a.desc||''});n++}else if(a.type==='create_music'&&a.title){D.music=D.music||[];D.music.push({id:uid2(),type:a.musicType||'ایده موسیقی',title:String(a.title),date:a.date||today(),duration:a.duration||'',note:a.note||''});n++}}catch(_){}}
-    if(n){try{if(typeof save==='function')save();else{localStorage.setItem('ARIA_ASSISTANT_PRO_V2',JSON.stringify(D));if(typeof render==='function')render()}}catch(_){}pendingActions=[];const b=$('ariaBrainApply');if(b)b.style.display='none';const a=$('ariaBrainAnswer');if(a)a.textContent+='\n\n✓ '+n+' تغییر در ARIA اعمال شد.'}
-  }
-
-  function ensureUI(){if($('ariaBrainDialog'))return;const css=document.createElement('style');css.textContent=`#ariaBrainFab{position:fixed;left:16px;bottom:calc(86px + env(safe-area-inset-bottom));z-index:70;width:56px;height:56px;border-radius:18px;background:linear-gradient(135deg,#4f7cff,#2dd4bf);font-size:24px;box-shadow:0 12px 32px #0007}.ariaBrainAns{white-space:pre-wrap;line-height:1.9;background:#0d151c;border:1px solid var(--line);border-radius:13px;padding:11px;min-height:90px;margin-top:10px}.ariaBrainQuick{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.ariaBrainQuick button{font-size:11px}`;document.head.appendChild(css);
-    const fab=document.createElement('button');fab.id='ariaBrainFab';fab.type='button';fab.title='مغز هوشمند ARIA';fab.textContent='✦';document.body.appendChild(fab);
-    const d=document.createElement('dialog');d.id='ariaBrainDialog';d.innerHTML=`<div><div class="sectionHead"><b>✦ مغز هوشمند ARIA</b><button class="ghost" id="ariaBrainClose" type="button">بستن</button></div><div class="sub" style="margin:8px 0">ARIA کل برنامه را می‌بیند: کارها، پروژه‌ها، موسیقی، وضعیت‌ها، تاریخ‌ها، اولویت‌ها و بخش فعال. می‌تواند تحلیل کند و برای تغییرات، قبل از اجرا از تو تأیید بگیرد.</div><textarea id="ariaBrainText" dir="rtl" placeholder="مثلاً: امروز برنامه‌ام را بچین / برای پروژه داریس سه کار بساز / این کار را انجام‌شده کن / هفته‌ام را سبک‌تر کن"></textarea><div class="ariaBrainQuick"><button data-q="امروز دقیقاً از کجا شروع کنم؟">برنامه امروز</button><button data-q="همه عقب‌افتاده‌ها را تحلیل و اولویت‌بندی کن">عقب‌افتاده‌ها</button><button data-q="سه اولویت اصلی من چیست؟">۳ اولویت</button><button data-q="وضعیت همه پروژه‌ها را تحلیل کن">پروژه‌ها</button><button data-q="برای این هفته یک برنامه عملی بچین">برنامه هفته</button></div><button id="ariaBrainSend" class="primary" type="button" style="margin-top:9px">از ARIA بپرس</button><button id="ariaBrainApply" type="button" style="margin-top:9px;display:none">✓ اجرای تغییرات پیشنهادی</button><div id="ariaBrainAnswer" class="ariaBrainAns">آماده‌ام. از کل برنامه سؤال بپرس.</div></div>`;document.body.appendChild(d);
-    fab.onclick=()=>d.showModal();$('ariaBrainClose').onclick=()=>d.close();d.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{$('ariaBrainText').value=b.dataset.q;run()});$('ariaBrainSend').onclick=run;$('ariaBrainApply').onclick=()=>{if(confirm('تغییرات پیشنهادی هوش مصنوعی روی برنامه اعمال شود؟'))applyActions()};
-    window.ARIA_BRAIN={ask:askAI,snapshot,open:()=>d.showModal()};
-  }
-  async function run(){const q=$('ariaBrainText')?.value.trim();if(!q)return;const a=$('ariaBrainAnswer'),b=$('ariaBrainSend'),ap=$('ariaBrainApply');b.disabled=true;ap.style.display='none';a.textContent='در حال تحلیل کل ARIA…';try{const r=await askAI(q);a.textContent=r.text||'پاسخی دریافت نشد.';if(r.actions.length){ap.textContent=`✓ اجرای ${r.actions.length} تغییر پیشنهادی`;ap.style.display='inline-block'}}catch(e){pendingActions=[];a.textContent=localFallback(q)+'\n\nوضعیت AI آنلاین: '+(e?.message||String(e))}finally{b.disabled=false}}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(ensureUI,500));else setTimeout(ensureUI,500);
+  if(window.__ARIA_BRAIN_AUTO_BOOT)return;window.__ARIA_BRAIN_AUTO_BOOT=true;
+  const load=src=>new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=reject;document.head.appendChild(s)});
+  (async()=>{
+    try{
+      await load('./aria-brain-core-v3.js?v=1');
+      await load('./aria-brain-auto.js?v=1');
+      const note=document.createElement('div');
+      note.id='ariaBrainAutoNote';
+      note.textContent='ARIA روی حالت خودکار است: تغییرات پیشنهادی غیرحذفی را خودش اعمال می‌کند.';
+      note.style.cssText='position:fixed;left:14px;bottom:calc(148px + env(safe-area-inset-bottom));z-index:69;background:#10231f;border:1px solid #2dd4bf66;color:#cffff5;padding:8px 10px;border-radius:12px;font-size:11px;max-width:240px;box-shadow:0 8px 24px #0006';
+      document.body.appendChild(note);
+      setTimeout(()=>note.remove(),5000);
+    }catch(e){console.error('ARIA automatic brain boot failed',e)}
+  })();
 })();
