@@ -11,13 +11,26 @@
   function slim(v,depth=0){if(depth>4)return undefined;if(v==null||typeof v==='string'||typeof v==='number'||typeof v==='boolean')return v;if(Array.isArray(v))return v.slice(0,200).map(x=>slim(x,depth+1));if(typeof v==='object'){const o={};for(const [k,val] of Object.entries(v)){if(['drawing','attachments','image','blob','file','dataUrl'].includes(k))continue;const s=slim(val,depth+1);if(s!==undefined)o[k]=s}return o}}
   function snapshot(){const D=getDB()||{};return{today:today(),currentView:typeof view!=='undefined'?view:null,currentProject:typeof currentProject!=='undefined'?currentProject:null,searchText:typeof searchText!=='undefined'?searchText:null,data:slim(D)};}
 
+  function parseAIText(raw,explicitActions){
+    let text=String(raw||'').trim();
+    let actions=Array.isArray(explicitActions)?explicitActions:[];
+    const fenced=[...text.matchAll(/```json\s*([\s\S]*?)```/gi)];
+    for(const m of fenced){try{const j=JSON.parse(m[1]);if(Array.isArray(j.actions)&&!actions.length)actions=j.actions}catch(_){}}
+    text=text.replace(/```json\s*[\s\S]*?```/gi,'').trim();
+    const jsonTail=text.match(/\{[\s\S]*?["']?actions["']?\s*:[\s\S]*\}\s*$/i);
+    if(jsonTail){try{const j=JSON.parse(jsonTail[0]);if(Array.isArray(j.actions)&&!actions.length)actions=j.actions}catch(_){}text=text.slice(0,jsonTail.index).trim();}
+    const metaIndex=text.search(/(?:^|\n)\s*(?:actions\s*:|create_task\s*:|update_task\s*:|complete_task\s*:|postpone_task\s*:)/i);
+    if(metaIndex>=0)text=text.slice(0,metaIndex).trim();
+    return {text:text||'پاسخ دریافت شد.',actions};
+  }
+
   async function askAI(query){
     const token=getToken();
-    const r=await fetch(`/api/aria-ai?mode=assistant&t=${encodeURIComponent(token)}&v=3`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query,context:snapshot(),history})});
+    const r=await fetch(`/api/aria-ai?mode=assistant&t=${encodeURIComponent(token)}&v=4`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query,context:snapshot(),history})});
     const out=await r.json().catch(()=>({}));if(!r.ok)throw new Error(out?.detail||out?.error||`خطای سرور ${r.status}`);
-    const text=String(out.text||'').trim();pendingActions=Array.isArray(out.actions)?out.actions:[];
-    history.push({role:'user',text:query},{role:'assistant',text});history=history.slice(-16);
-    return{text,actions:pendingActions};
+    const parsed=parseAIText(out.text,out.actions);pendingActions=parsed.actions;
+    history.push({role:'user',text:query},{role:'assistant',text:parsed.text});history=history.slice(-16);
+    return{text:parsed.text,actions:pendingActions};
   }
 
   function localFallback(q){const D=getDB()||{},tasks=(D.tasks||[]).filter(t=>t.status!=='done'),td=today();const overdue=tasks.filter(t=>t.date&&t.date<td);if(/عقب|دیر/.test(q))return overdue.length?`کارهای عقب‌افتاده:\n${overdue.map((t,i)=>`${i+1}) ${t.title}`).join('\n')}`:'کار عقب‌افتاده نداری.';if(/امروز|اولویت|چی کار/.test(q)){const score=t=>(t.priority==='urgent'?30:t.priority==='important'?15:0)+(t.date&&t.date<td?40:0)+(t.date===td?20:0);return tasks.sort((a,b)=>score(b)-score(a)).slice(0,5).map((t,i)=>`${i+1}) ${t.title}`).join('\n')||'کار بازی نداری.'}return `ARIA به داده‌های داخل برنامه دسترسی دارد: ${tasks.length} کار باز، ${overdue.length} عقب‌افتاده و ${(D.projects||[]).length} پروژه.`}
@@ -27,7 +40,7 @@
     if(n){try{if(typeof save==='function')save();else{localStorage.setItem('ARIA_ASSISTANT_PRO_V2',JSON.stringify(D));if(typeof render==='function')render()}}catch(_){}pendingActions=[];const b=$('ariaBrainApply');if(b)b.style.display='none';const a=$('ariaBrainAnswer');if(a)a.textContent+='\n\n✓ '+n+' تغییر در ARIA اعمال شد.'}
   }
 
-  function ensureUI(){if($('ariaBrainDialog'))return;const css=document.createElement('style');css.textContent=`#ariaBrainFab{position:fixed;left:16px;bottom:calc(86px + env(safe-area-inset-bottom));z-index:70;width:56px;height:56px;border-radius:18px;background:linear-gradient(135deg,#4f7cff,#2dd4bf);font-size:24px;box-shadow:0 12px 32px #0007}.ariaBrainAns{white-space:pre-wrap;line-height:1.9;background:#0d151c;border:1px solid var(--line);border-radius:13px;padding:11px;min-height:90px;margin-top:10px}.ariaBrainQuick{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.ariaBrainQuick button{font-size:11px}`;document.head.appendChild(css);
+  function ensureUI(){if($('ariaBrainDialog'))return;const css=document.createElement('style');css.textContent=`#ariaBrainFab{position:fixed;left:16px;bottom:calc(86px + env(safe-area-inset-bottom));z-index:70;width:56px;height:56px;border-radius:18px;background:linear-gradient(135deg,#4f7cff,#2dd4bf);font-size:24px;box-shadow:0 12px 32px #0007}.ariaBrainAns{white-space:pre-wrap;line-height:1.9;background:#0d151c!important;color:#f3f7f9!important;-webkit-text-fill-color:#f3f7f9!important;border:1px solid var(--line);border-radius:13px;padding:11px;min-height:90px;margin-top:10px;direction:rtl;text-align:right}.ariaBrainQuick{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.ariaBrainQuick button{font-size:11px}`;document.head.appendChild(css);
     const fab=document.createElement('button');fab.id='ariaBrainFab';fab.type='button';fab.title='مغز هوشمند ARIA';fab.textContent='✦';document.body.appendChild(fab);
     const d=document.createElement('dialog');d.id='ariaBrainDialog';d.innerHTML=`<div><div class="sectionHead"><b>✦ مغز هوشمند ARIA</b><button class="ghost" id="ariaBrainClose" type="button">بستن</button></div><div class="sub" style="margin:8px 0">ARIA کل برنامه را می‌بیند: کارها، پروژه‌ها، موسیقی، وضعیت‌ها، تاریخ‌ها، اولویت‌ها و بخش فعال. می‌تواند تحلیل کند و برای تغییرات، قبل از اجرا از تو تأیید بگیرد.</div><textarea id="ariaBrainText" dir="rtl" placeholder="مثلاً: امروز برنامه‌ام را بچین / برای پروژه داریس سه کار بساز / این کار را انجام‌شده کن / هفته‌ام را سبک‌تر کن"></textarea><div class="ariaBrainQuick"><button data-q="امروز دقیقاً از کجا شروع کنم؟">برنامه امروز</button><button data-q="همه عقب‌افتاده‌ها را تحلیل و اولویت‌بندی کن">عقب‌افتاده‌ها</button><button data-q="سه اولویت اصلی من چیست؟">۳ اولویت</button><button data-q="وضعیت همه پروژه‌ها را تحلیل کن">پروژه‌ها</button><button data-q="برای این هفته یک برنامه عملی بچین">برنامه هفته</button></div><button id="ariaBrainSend" class="primary" type="button" style="margin-top:9px">از ARIA بپرس</button><button id="ariaBrainApply" type="button" style="margin-top:9px;display:none">✓ اجرای تغییرات پیشنهادی</button><div id="ariaBrainAnswer" class="ariaBrainAns">آماده‌ام. از کل برنامه سؤال بپرس.</div></div>`;document.body.appendChild(d);
     fab.onclick=()=>{try{d.showModal()}catch{d.setAttribute('open','')}};$('ariaBrainClose').onclick=()=>{try{d.close()}catch{d.removeAttribute('open')}};d.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{$('ariaBrainText').value=b.dataset.q;run()});$('ariaBrainSend').onclick=run;$('ariaBrainApply').onclick=()=>{if(confirm('تغییرات پیشنهادی هوش مصنوعی روی برنامه اعمال شود؟'))applyActions()};
