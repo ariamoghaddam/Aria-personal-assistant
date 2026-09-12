@@ -5,7 +5,7 @@
   (async()=>{
     try{
       await load('./aria-ai-safe-bridge.js?v=1');
-      await load('./aria-brain-core-v3.js?v=1');
+      await load('./aria-brain-core-v3.js?v=2');
       await loadCss('./aria-brain-position.css?v=1');
       const note=document.createElement('div');
       note.id='ariaBrainAutoNote';
