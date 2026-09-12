@@ -7,7 +7,7 @@ window.ARIA_CLOUD = {
 };
 
 (async()=>{
-  const marker='ARIA_SW_PURGED_AI_ENTRY_V3';
+  const marker='ARIA_SW_PURGED_AI_ENTRY_V4';
   try{
     if(!localStorage.getItem(marker)){
       localStorage.setItem(marker,'1');
@@ -32,11 +32,12 @@ window.ARIA_CLOUD = {
   });
 
   window.addEventListener('load',()=>setTimeout(async()=>{
-    document.querySelectorAll('script[data-aria-ai-input],script[data-aria-voice-guard],script[data-aria-hand-local],script[data-aria-brain],script[data-aria-theme],script[data-aria-settings],script[data-aria-focus],script[data-aria-focus-distraction],script[data-aria-focus-entry],script[data-aria-productivity],script[data-aria-price-book],script[data-aria-music-pro],script[data-aria-metronome]').forEach(x=>x.remove());
+    document.querySelectorAll('script[data-aria-ai-input],script[data-aria-voice-guard],script[data-aria-hand-local],script[data-aria-brain],script[data-aria-brain-entry],script[data-aria-theme],script[data-aria-settings],script[data-aria-focus],script[data-aria-focus-distraction],script[data-aria-focus-entry],script[data-aria-productivity],script[data-aria-price-book],script[data-aria-music-pro],script[data-aria-metronome]').forEach(x=>x.remove());
 
     await load('./theme-ui.js?v=1','ariaTheme').catch(e=>console.error('ARIA theme load failed',e));
     load('./settings-ui.js?v=2','ariaSettings').catch(e=>console.error('ARIA settings load failed',e));
     load('./aria-brain.js?v=6','ariaBrain').catch(e=>console.error('ARIA brain load failed',e));
+    load('./aria-brain-entry.js?v=1','ariaBrainEntry').catch(e=>console.error('ARIA brain entry load failed',e));
     await load('./focus-center.js?v=entry4','ariaFocus').catch(e=>console.error('ARIA focus load failed',e));
     load('./focus-distraction-enhance.js?v=entry4','ariaFocusDistraction').catch(e=>console.error('ARIA focus distraction load failed',e));
     load('./focus-entry-fix.js?v=1','ariaFocusEntry').catch(e=>console.error('ARIA focus entry failed',e));
