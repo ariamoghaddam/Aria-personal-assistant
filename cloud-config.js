@@ -12,19 +12,12 @@ window.ARIA_CLOUD = {
   style.textContent='#ariaBrainFab,#ariaBrainEntryBtn{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}';
   if(!document.getElementById('ariaSingleAiStyle')) document.head.appendChild(style);
   const cleanup=()=>{document.getElementById('ariaBrainFab')?.remove();document.getElementById('ariaBrainEntryBtn')?.remove();};
-  const make=()=>{
-    cleanup();if(document.getElementById('ariaPermanentAiBtn')) return;
-    const b=document.createElement('button');b.id='ariaPermanentAiBtn';b.type='button';b.textContent='✦ AI';b.setAttribute('aria-label','باز کردن مغز هوشمند ARIA');
-    b.style.cssText='position:fixed;left:14px;bottom:calc(138px + env(safe-area-inset-bottom));z-index:2147483647;min-width:64px;height:54px;padding:0 16px;border:0;border-radius:18px;background:linear-gradient(135deg,#4f7cff,#2dd4bf);color:#fff;font-weight:900;font-size:16px;box-shadow:0 12px 32px rgba(0,0,0,.55);display:block!important;visibility:visible!important;opacity:1!important';
-    b.onclick=()=>{const d=document.getElementById('ariaBrainDialog');if(d){try{d.showModal()}catch{d.setAttribute('open','')}return;}if(window.ARIA_BRAIN&&typeof window.ARIA_BRAIN.open==='function'){try{window.ARIA_BRAIN.open()}catch{}return;}const s=document.createElement('script');s.src='./aria-brain.js?force='+Date.now();s.onload=()=>setTimeout(()=>{cleanup();const dd=document.getElementById('ariaBrainDialog');if(dd){try{dd.showModal()}catch{dd.setAttribute('open','')}}},700);document.head.appendChild(s);};
-    (document.body||document.documentElement).appendChild(b);
-  };
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',make); else make();
-  setInterval(make,700);window.addEventListener('pageshow',make);
+  const make=()=>{cleanup();if(document.getElementById('ariaPermanentAiBtn')) return;const b=document.createElement('button');b.id='ariaPermanentAiBtn';b.type='button';b.textContent='✦ AI';b.setAttribute('aria-label','باز کردن مغز هوشمند ARIA');b.style.cssText='position:fixed;left:14px;bottom:calc(138px + env(safe-area-inset-bottom));z-index:2147483647;min-width:64px;height:54px;padding:0 16px;border:0;border-radius:18px;background:linear-gradient(135deg,#4f7cff,#2dd4bf);color:#fff;font-weight:900;font-size:16px;box-shadow:0 12px 32px rgba(0,0,0,.55);display:block!important';b.onclick=()=>{const d=document.getElementById('ariaBrainDialog');if(d){try{d.showModal()}catch{d.setAttribute('open','')}return;}if(window.ARIA_BRAIN&&typeof window.ARIA_BRAIN.open==='function'){try{window.ARIA_BRAIN.open()}catch{}return;}const s=document.createElement('script');s.src='./aria-brain.js?force='+Date.now();s.onload=()=>setTimeout(()=>{cleanup();const dd=document.getElementById('ariaBrainDialog');if(dd){try{dd.showModal()}catch{dd.setAttribute('open','')}}},700);document.head.appendChild(s)};(document.body||document.documentElement).appendChild(b)};
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',make); else make();setInterval(make,700);window.addEventListener('pageshow',make);
 })();
 
 (async()=>{
-  const marker='ARIA_CACHE_REFRESH_PUSH_V14';
+  const marker='ARIA_CACHE_REFRESH_PUSH_V15';
   try{if(!localStorage.getItem(marker)){localStorage.setItem(marker,'1');if(window.caches){const keys=await caches.keys();await Promise.all(keys.map(k=>caches.delete(k).catch(()=>false)));}}}catch(e){console.warn('ARIA refresh',e)}
   const load=(src,key)=>new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.defer=true;if(key)s.dataset[key]='1';s.onload=resolve;s.onerror=reject;document.head.appendChild(s);});
   window.addEventListener('load',()=>setTimeout(async()=>{
@@ -33,7 +26,7 @@ window.ARIA_CLOUD = {
     load('./settings-ui.js?v=2','ariaSettings').catch(e=>console.error('ARIA settings load failed',e));
     await load('./ai-fetch-guard.js?v=1','ariaAiFetchGuard').catch(e=>console.error('ARIA AI timeout guard load failed',e));
     load('./aria-brain.js?v=8','ariaBrain').catch(e=>console.error('ARIA brain load failed',e));
-    load('./notification-center.js?v=5','ariaNotifications').catch(e=>console.error('ARIA notification load failed',e));
+    load('./notification-center.js?v=6','ariaNotifications').catch(e=>console.error('ARIA notification load failed',e));
     await load('./focus-center.js?v=entry4','ariaFocus').catch(e=>console.error('ARIA focus load failed',e));
     load('./focus-distraction-enhance.js?v=entry4','ariaFocusDistraction').catch(e=>console.error('ARIA focus distraction load failed',e));
     load('./focus-entry-fix.js?v=1','ariaFocusEntry').catch(e=>console.error('ARIA focus entry failed',e));
