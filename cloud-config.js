@@ -7,6 +7,11 @@ window.ARIA_CLOUD = {
 };
 
 (function ensurePermanentAIEntry(){
+  const style=document.createElement('style');
+  style.id='ariaSingleAiStyle';
+  style.textContent='#ariaBrainFab,#ariaBrainEntryBtn{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}';
+  if(!document.getElementById('ariaSingleAiStyle')) document.head.appendChild(style);
+
   const cleanup=()=>{
     document.getElementById('ariaBrainFab')?.remove();
     document.getElementById('ariaBrainEntryBtn')?.remove();
@@ -32,12 +37,12 @@ window.ARIA_CLOUD = {
     (document.body||document.documentElement).appendChild(b);
   };
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',make); else make();
-  setInterval(make,1200);
+  setInterval(make,700);
   window.addEventListener('pageshow',make);
 })();
 
 (async()=>{
-  const marker='ARIA_SW_PURGED_AI_SINGLE_ENTRY_V6';
+  const marker='ARIA_SW_PURGED_AI_SINGLE_ENTRY_V7';
   try{
     if(!localStorage.getItem(marker)){
       localStorage.setItem(marker,'1');
