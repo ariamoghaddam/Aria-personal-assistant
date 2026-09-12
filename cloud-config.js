@@ -42,7 +42,7 @@ window.ARIA_CLOUD = {
 })();
 
 (async()=>{
-  const marker='ARIA_SW_PURGED_AI_CLIENT_V9';
+  const marker='ARIA_SW_PURGED_NOTIFICATIONS_V10';
   try{
     if(!localStorage.getItem(marker)){
       localStorage.setItem(marker,'1');
@@ -67,12 +67,13 @@ window.ARIA_CLOUD = {
   });
 
   window.addEventListener('load',()=>setTimeout(async()=>{
-    document.querySelectorAll('script[data-aria-ai-input],script[data-aria-voice-guard],script[data-aria-hand-local],script[data-aria-brain],script[data-aria-brain-entry],script[data-aria-ai-fetch-guard],script[data-aria-theme],script[data-aria-settings],script[data-aria-focus],script[data-aria-focus-distraction],script[data-aria-focus-entry],script[data-aria-productivity],script[data-aria-price-book],script[data-aria-music-pro],script[data-aria-metronome]').forEach(x=>x.remove());
+    document.querySelectorAll('script[data-aria-ai-input],script[data-aria-voice-guard],script[data-aria-hand-local],script[data-aria-brain],script[data-aria-brain-entry],script[data-aria-ai-fetch-guard],script[data-aria-notifications],script[data-aria-theme],script[data-aria-settings],script[data-aria-focus],script[data-aria-focus-distraction],script[data-aria-focus-entry],script[data-aria-productivity],script[data-aria-price-book],script[data-aria-music-pro],script[data-aria-metronome]').forEach(x=>x.remove());
 
     await load('./theme-ui.js?v=1','ariaTheme').catch(e=>console.error('ARIA theme load failed',e));
     load('./settings-ui.js?v=2','ariaSettings').catch(e=>console.error('ARIA settings load failed',e));
     await load('./ai-fetch-guard.js?v=1','ariaAiFetchGuard').catch(e=>console.error('ARIA AI timeout guard load failed',e));
     load('./aria-brain.js?v=8','ariaBrain').catch(e=>console.error('ARIA brain load failed',e));
+    load('./notification-center.js?v=1','ariaNotifications').catch(e=>console.error('ARIA notification load failed',e));
     await load('./focus-center.js?v=entry4','ariaFocus').catch(e=>console.error('ARIA focus load failed',e));
     load('./focus-distraction-enhance.js?v=entry4','ariaFocusDistraction').catch(e=>console.error('ARIA focus distraction load failed',e));
     load('./focus-entry-fix.js?v=1','ariaFocusEntry').catch(e=>console.error('ARIA focus entry failed',e));
