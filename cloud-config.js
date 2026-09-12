@@ -7,7 +7,12 @@ window.ARIA_CLOUD = {
 };
 
 (function ensurePermanentAIEntry(){
+  const cleanup=()=>{
+    document.getElementById('ariaBrainFab')?.remove();
+    document.getElementById('ariaBrainEntryBtn')?.remove();
+  };
   const make=()=>{
+    cleanup();
     if(document.getElementById('ariaPermanentAiBtn')) return;
     const b=document.createElement('button');
     b.id='ariaPermanentAiBtn';
@@ -21,7 +26,7 @@ window.ARIA_CLOUD = {
       if(window.ARIA_BRAIN&&typeof window.ARIA_BRAIN.open==='function'){try{window.ARIA_BRAIN.open()}catch{}return;}
       const s=document.createElement('script');
       s.src='./aria-brain.js?force='+Date.now();
-      s.onload=()=>setTimeout(()=>{const dd=document.getElementById('ariaBrainDialog');if(dd){try{dd.showModal()}catch{dd.setAttribute('open','')}}},700);
+      s.onload=()=>setTimeout(()=>{cleanup();const dd=document.getElementById('ariaBrainDialog');if(dd){try{dd.showModal()}catch{dd.setAttribute('open','')}}},700);
       document.head.appendChild(s);
     };
     (document.body||document.documentElement).appendChild(b);
@@ -32,7 +37,7 @@ window.ARIA_CLOUD = {
 })();
 
 (async()=>{
-  const marker='ARIA_SW_PURGED_AI_ENTRY_V5';
+  const marker='ARIA_SW_PURGED_AI_SINGLE_ENTRY_V6';
   try{
     if(!localStorage.getItem(marker)){
       localStorage.setItem(marker,'1');
@@ -62,7 +67,6 @@ window.ARIA_CLOUD = {
     await load('./theme-ui.js?v=1','ariaTheme').catch(e=>console.error('ARIA theme load failed',e));
     load('./settings-ui.js?v=2','ariaSettings').catch(e=>console.error('ARIA settings load failed',e));
     load('./aria-brain.js?v=7','ariaBrain').catch(e=>console.error('ARIA brain load failed',e));
-    load('./aria-brain-entry.js?v=2','ariaBrainEntry').catch(e=>console.error('ARIA brain entry load failed',e));
     await load('./focus-center.js?v=entry4','ariaFocus').catch(e=>console.error('ARIA focus load failed',e));
     load('./focus-distraction-enhance.js?v=entry4','ariaFocusDistraction').catch(e=>console.error('ARIA focus distraction load failed',e));
     load('./focus-entry-fix.js?v=1','ariaFocusEntry').catch(e=>console.error('ARIA focus entry failed',e));
