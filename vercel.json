@@ -1,0 +1,28 @@
+{
+  "headers": [
+    {
+      "source": "/cloud-config.js",
+      "headers": [{"key":"Cache-Control","value":"no-store, no-cache, must-revalidate, max-age=0"}]
+    },
+    {
+      "source": "/aria-brain.js",
+      "headers": [{"key":"Cache-Control","value":"no-store, no-cache, must-revalidate, max-age=0"}]
+    },
+    {
+      "source": "/aria-brain-core-v3.js",
+      "headers": [{"key":"Cache-Control","value":"no-store, no-cache, must-revalidate, max-age=0"}]
+    },
+    {
+      "source": "/aria-brain-entry.js",
+      "headers": [{"key":"Cache-Control","value":"no-store, no-cache, must-revalidate, max-age=0"}]
+    },
+    {
+      "source": "/",
+      "headers": [{"key":"Cache-Control","value":"no-store, no-cache, must-revalidate, max-age=0"}]
+    },
+    {
+      "source": "/index.html",
+      "headers": [{"key":"Cache-Control","value":"no-store, no-cache, must-revalidate, max-age=0"}]
+    }
+  ]
+}
