@@ -6,12 +6,12 @@
       if(document.getElementById('ariaBrainFab')&&document.getElementById('ariaBrainDialog'))return;
       if(force){try{delete window.__ARIA_BRAIN_V2}catch(_){window.__ARIA_BRAIN_V2=false}}
       if(!window.__ARIA_AI_SAFE_BRIDGE_V1)await load('./aria-ai-safe-bridge.js?v=1');
-      await load('./aria-brain-core-v3.js?v=3');
+      await load('./aria-brain-core-v3.js?v=4');
       if(!document.querySelector('link[href*="aria-brain-position.css"]'))await loadCss('./aria-brain-position.css?v=1');
       setTimeout(()=>{
         if(!document.getElementById('ariaBrainFab')||!document.getElementById('ariaBrainDialog')){
           try{delete window.__ARIA_BRAIN_V2}catch(_){window.__ARIA_BRAIN_V2=false}
-          load('./aria-brain-core-v3.js?v=3-retry').catch(()=>{});
+          load('./aria-brain-core-v3.js?v=4-retry').catch(()=>{});
         }
       },700);
     }catch(e){console.error('ARIA AI boot failed',e)}
