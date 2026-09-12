@@ -1,7 +1,9 @@
 {
+  "id": "/",
   "name": "ARIA — دستیار شخصی آریا",
   "short_name": "ARIA",
-  "start_url": "./",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0b1117",
   "theme_color": "#0e1720",
