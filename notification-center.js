@@ -1,6 +1,7 @@
 (function(){
-  if(window.__ARIA_NOTIFY_V2)return;window.__ARIA_NOTIFY_V2=true;
+  if(window.__ARIA_NOTIFY_V3)return;window.__ARIA_NOTIFY_V3=true;
   const cfg=window.ARIA_CLOUD||{};
+  const VAPID_PUBLIC='BBLpNEz_gYbTWB0GR3hVxTwsHNOOlplYH06E-KraiPJTO1Yz037extmkp7VENUkgD37UvDFPTIpYqidHpF6tNpw';
   const $=id=>document.getElementById(id);
   const endpoint=(path)=>`${String(cfg.supabaseUrl||'').replace(/\/$/,'')}${path}`;
 
@@ -9,7 +10,10 @@
   function deviceName(){const ua=navigator.userAgent||'';if(/iPad/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1))return'ARIA iPad';if(/iPhone/.test(ua))return'ARIA iPhone';return'ARIA device'}
   function standalone(){return window.matchMedia?.('(display-mode: standalone)').matches||navigator.standalone===true}
   function b64ToUint8(s){const p='='.repeat((4-s.length%4)%4);const b=atob((s+p).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from([...b].map(c=>c.charCodeAt(0)))}
-  async function getPublicKey(){const r=await fetch('/api/aria-notify?public_key=1',{cache:'no-store'});const o=await r.json().catch(()=>({}));if(!r.ok||!o.publicKey)throw new Error(o?.detail||o?.error||'کلید اعلان دریافت نشد');return o.publicKey}
+  async function getPublicKey(){
+    try{const r=await fetch('/api/aria-notify?public_key=1',{cache:'no-store'});const o=await r.json().catch(()=>({}));if(r.ok&&o.publicKey)return o.publicKey}catch(_){ }
+    return VAPID_PUBLIC;
+  }
   async function saveSubscription(sub){const token=getToken();if(!token)throw new Error('اول باید وارد حساب ARIA باشی.');const body={owner_id:null,device_name:deviceName(),endpoint:sub.endpoint,subscription:sub.toJSON(),updated_at:new Date().toISOString()};
     const ref=new URL(cfg.supabaseUrl).hostname.split('.')[0];const sessionRaw=localStorage.getItem(`sb-${ref}-auth-token`);let owner='';try{const x=JSON.parse(sessionRaw||'{}');owner=x?.user?.id||x?.currentSession?.user?.id||x?.session?.user?.id||''}catch(_){ }
     if(!owner){const p=JSON.parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));owner=p.sub||''}
