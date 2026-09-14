@@ -17,6 +17,18 @@
       "headers": [{"key":"Cache-Control","value":"no-store, no-cache, must-revalidate, max-age=0"}]
     },
     {
+      "source": "/voice-engine.js",
+      "headers": [{"key":"Cache-Control","value":"no-store, no-cache, must-revalidate, max-age=0"}]
+    },
+    {
+      "source": "/voice-fast.js",
+      "headers": [{"key":"Cache-Control","value":"no-store, no-cache, must-revalidate, max-age=0"}]
+    },
+    {
+      "source": "/voice-conversation.js",
+      "headers": [{"key":"Cache-Control","value":"no-store, no-cache, must-revalidate, max-age=0"}]
+    },
+    {
       "source": "/",
       "headers": [{"key":"Cache-Control","value":"no-store, no-cache, must-revalidate, max-age=0"}]
     },
