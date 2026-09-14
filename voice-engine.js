@@ -1,93 +1,87 @@
 (function(){
-  if(window.__ARIA_VOICE_ENGINE_V7)return;window.__ARIA_VOICE_ENGINE_V7=true;
+  if(window.__ARIA_VOICE_ENGINE_V8)return;window.__ARIA_VOICE_ENGINE_V8=true;
 
-  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  let pipePromise=null;
 
-  async function openMic(){
-    if(!navigator.mediaDevices?.getUserMedia) return null;
+  function bestMime(){
+    if(!window.MediaRecorder)return'';
+    for(const t of ['audio/mp4','audio/webm;codecs=opus','audio/webm']){
+      try{if(MediaRecorder.isTypeSupported?.(t))return t}catch(_){ }
+    }
+    return'';
+  }
+
+  async function getPipe(onState){
+    if(!pipePromise){
+      pipePromise=(async()=>{
+        onState?.('در حال آماده‌کردن تشخیص دقیق فارسی…');
+        const mod=await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
+        try{mod.env.useBrowserCache=true}catch(_){ }
+        return await mod.pipeline('automatic-speech-recognition','Xenova/whisper-base',{quantized:true,progress_callback:p=>{
+          try{if(p?.status==='progress'&&Number.isFinite(p.progress))onState?.(`آماده‌سازی موتور فارسی ${Math.round(p.progress)}٪…`)}catch(_){ }
+        }});
+      })();
+    }
+    return pipePromise;
+  }
+
+  async function transcribe(blob,onState){
+    const pipe=await getPipe(onState);
+    onState?.('دارم صدات رو به فارسی تبدیل می‌کنم…');
+    const url=URL.createObjectURL(blob);
     try{
-      return await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1}});
+      const out=await pipe(url,{language:'fa',task:'transcribe',chunk_length_s:18,stride_length_s:3,return_timestamps:false});
+      const text=String(out?.text||'').replace(/\s+/g,' ').trim();
+      if(!text)throw new Error('چیزی از صدات متوجه نشدم؛ دوباره بگو.');
+      return text;
     }catch(e){
-      const name=String(e?.name||'');
-      if(name==='NotAllowedError'||name==='PermissionDeniedError'){
-        throw new Error('اجازه میکروفون برای این پنجره فعال نمانده. ARIA را در Safari اصلی یا از آیکن Home Screen باز کن و یک‌بار Allow بزن.');
-      }
-      if(name==='NotFoundError'||name==='DevicesNotFoundError') throw new Error('میکروفونی روی این دستگاه پیدا نشد.');
-      throw new Error('میکروفون باز نشد؛ دوباره امتحان کن.');
+      const m=String(e?.message||e||'');
+      if(/load failed|fetch|network/i.test(m))throw new Error('موتور فارسی کامل لود نشد؛ اینترنت رو چک کن و یک بار دیگه بزن.');
+      throw e;
+    }finally{
+      try{URL.revokeObjectURL(url)}catch(_){ }
     }
   }
 
   async function startRecorder(opts={}){
-    if(!SR) throw new Error('تشخیص زنده صدا روی این مرورگر در دسترس نیست.');
+    if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder)throw new Error('ضبط صدا روی این دستگاه در دسترس نیست.');
 
-    opts.onState?.('در حال فعال‌کردن میکروفون…');
-    const micStream=await openMic();
-    const releaseMic=()=>{try{micStream?.getTracks?.().forEach(t=>t.stop())}catch(_){ }};
+    let stream;
+    try{
+      stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1}});
+    }catch(e){
+      const n=String(e?.name||'');
+      if(n==='NotAllowedError'||n==='PermissionDeniedError')throw new Error('اجازه میکروفون بسته است. در تنظیمات ARIA/Safari میکروفون را روی Allow بگذار.');
+      throw new Error('میکروفون باز نشد؛ دوباره امتحان کن.');
+    }
 
-    let rec=new SR();
-    rec.lang='fa-IR';
-    rec.interimResults=false;
-    rec.continuous=true;
-    rec.maxAlternatives=3;
+    const mime=bestMime();
+    const mr=new MediaRecorder(stream,mime?{mimeType:mime}:undefined);
+    const chunks=[];let done=false;
+    const cleanup=()=>{try{stream.getTracks().forEach(t=>t.stop())}catch(_){ }};
 
-    let stopped=false, settled=false;
-    let parts=[];
-    let resolveResult, rejectResult;
-    const result=new Promise((resolve,reject)=>{resolveResult=resolve;rejectResult=reject});
+    const result=new Promise((resolve,reject)=>{
+      mr.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
+      mr.onerror=e=>{cleanup();reject(e.error||new Error('خطا در ضبط صدا'))};
+      mr.onstop=async()=>{
+        if(done)return;done=true;cleanup();
+        try{
+          const blob=new Blob(chunks,{type:mr.mimeType||mime||'audio/mp4'});
+          if(blob.size<1600)throw new Error('صدا خیلی کوتاه بود؛ دوباره بگو.');
+          const text=await transcribe(blob,opts.onState);
+          resolve(text);
+        }catch(e){reject(e)}
+      };
+    });
 
-    const finish=(err)=>{
-      if(settled)return;settled=true;
-      releaseMic();
-      const text=parts.join(' ').replace(/\s+/g,' ').trim();
-      if(err) rejectResult(err);
-      else if(text) resolveResult(text);
-      else rejectResult(new Error('چیزی از صدات متوجه نشدم؛ دوباره بگو.'));
-    };
-
-    rec.onresult=e=>{
-      for(let i=e.resultIndex;i<e.results.length;i++){
-        const r=e.results[i];
-        if(r.isFinal){
-          const t=String(r[0]?.transcript||'').trim();
-          if(t) parts.push(t);
-        }
-      }
-      if(parts.length) opts.onState?.('دارم گوش می‌دم… برای پایان دوباره بزن.');
-    };
-
-    rec.onerror=e=>{
-      const code=String(e?.error||'');
-      if(stopped && ['aborted','no-speech'].includes(code)) return;
-      if(code==='not-allowed'||code==='service-not-allowed') finish(new Error('این پنجره اجازه پایدار میکروفون نداره. ARIA را با Safari اصلی یا از آیکن نصب‌شده باز کن، نه مرورگر داخل ChatGPT.'));
-      else if(code==='audio-capture') finish(new Error('میکروفون در دسترس نیست.'));
-      else if(code==='network') finish(new Error('سرویس تشخیص صدا در دسترس نیست؛ دوباره امتحان کن.'));
-      else if(code && code!=='no-speech') finish(new Error('خطا در تشخیص صدا: '+code));
-    };
-
-    rec.onend=()=>{
-      if(stopped){finish();return;}
-      try{rec.start()}catch(_){setTimeout(()=>{try{if(!stopped)rec.start()}catch{}},180)}
-    };
-
+    mr.start(250);
     opts.onState?.('دارم گوش می‌دم… طبیعی صحبت کن و برای پایان دوباره بزن.');
-    try{rec.start()}catch(e){releaseMic();throw new Error('تشخیص صدا شروع نشد؛ ARIA را در Safari اصلی باز کن و دوباره امتحان کن.');}
-
-    return {
-      stop:()=>{
-        if(stopped)return;stopped=true;
-        opts.onState?.('در حال نهایی‌کردن متن…');
-        try{rec.stop()}catch(_){finish()}
-        setTimeout(()=>finish(),700);
-      },
-      cancel:()=>{
-        if(stopped)return;stopped=true;
-        try{rec.abort()}catch(_){ }
-        releaseMic();
-        if(!settled){settled=true;rejectResult(new Error('لغو شد.'));}
-      },
+    return{
+      stop:()=>{if(mr.state!=='inactive')mr.stop()},
+      cancel:()=>{done=true;try{mr.stop()}catch(_){ }cleanup()},
       result
     };
   }
 
-  window.ARIA_VOICE_ENGINE={startRecorder};
+  window.ARIA_VOICE_ENGINE={startRecorder,transcribe};
 })();
