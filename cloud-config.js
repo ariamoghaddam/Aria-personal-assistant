@@ -17,9 +17,10 @@ window.ARIA_CLOUD = {
 })();
 
 (async()=>{
-  const marker='ARIA_CACHE_REFRESH_PERSIAN_VOICE_V24';
+  const marker='ARIA_CACHE_REFRESH_PERSIAN_VOICE_V25';
   try{if(!localStorage.getItem(marker)){localStorage.setItem(marker,'1');if(window.caches){const keys=await caches.keys();await Promise.all(keys.map(k=>caches.delete(k).catch(()=>false)));}}}catch(e){console.warn('ARIA refresh',e)}
   const load=(src,key)=>new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.defer=true;if(key)s.dataset[key]='1';s.onload=resolve;s.onerror=reject;document.head.appendChild(s);});
+  const fresh=src=>src+(src.includes('?')?'&':'?')+'fresh='+Date.now();
   window.addEventListener('load',()=>setTimeout(async()=>{
     document.querySelectorAll('script[data-aria-ai-input],script[data-aria-voice-guard],script[data-aria-voice-engine],script[data-aria-fast-voice],script[data-aria-voice-conversation],script[data-aria-hand-local],script[data-aria-brain],script[data-aria-brain-entry],script[data-aria-ai-fetch-guard],script[data-aria-notifications],script[data-aria-routines],script[data-aria-delete-fix],script[data-aria-theme],script[data-aria-settings],script[data-aria-focus],script[data-aria-focus-distraction],script[data-aria-focus-entry],script[data-aria-productivity],script[data-aria-price-book],script[data-aria-music-pro],script[data-aria-metronome]').forEach(x=>x.remove());
     await load('./theme-ui.js?v=1','ariaTheme').catch(e=>console.error('ARIA theme load failed',e));
@@ -39,8 +40,8 @@ window.ARIA_CLOUD = {
     load('./handwriting-local.js?v=2','ariaHandLocal').catch(e=>console.error('ARIA handwriting load failed',e));
     try{await load('./ai-input.js?v=26','ariaAiInput');}catch(e){console.error('ARIA ai input load failed',e);}
     await load('./voice-guard.js?v=26','ariaVoiceGuard').catch(e=>console.error('ARIA voice fallback load failed',e));
-    await load('./voice-engine.js?v=4','ariaVoiceEngine').catch(e=>console.error('ARIA voice engine load failed',e));
-    load('./voice-fast.js?v=2','ariaFastVoice').catch(e=>console.error('ARIA fast voice load failed',e));
-    load('./voice-conversation.js?v=3','ariaVoiceConversation').catch(e=>console.error('ARIA spoken conversation load failed',e));
+    await load(fresh('./voice-engine.js'),'ariaVoiceEngine').catch(e=>console.error('ARIA voice engine load failed',e));
+    load(fresh('./voice-fast.js'),'ariaFastVoice').catch(e=>console.error('ARIA fast voice load failed',e));
+    load(fresh('./voice-conversation.js'),'ariaVoiceConversation').catch(e=>console.error('ARIA spoken conversation load failed',e));
   },250));
 })();
