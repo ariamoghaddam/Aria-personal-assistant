@@ -1,5 +1,5 @@
 (function(){
-  if(window.__ARIA_VOICE_ENGINE_V3)return;window.__ARIA_VOICE_ENGINE_V3=true;
+  if(window.__ARIA_VOICE_ENGINE_V4)return;window.__ARIA_VOICE_ENGINE_V4=true;
   let localPipePromise=null;
 
   function bestMime(){
@@ -10,14 +10,33 @@
     return'';
   }
 
+  function persianScore(text){
+    const s=String(text||'').replace(/\s+/g,'');
+    if(!s)return 0;
+    const fa=(s.match(/[\u0600-\u06FF]/g)||[]).length;
+    return fa/s.length;
+  }
+
+  function looksBad(text){
+    const t=String(text||'').trim();
+    if(!t)return true;
+    if(persianScore(t)<0.55)return true;
+    const words=t.split(/\s+/).filter(Boolean);
+    if(words.length>=5){
+      const uniq=new Set(words.map(x=>x.replace(/[،؛,.!?؟]/g,'')));
+      if(uniq.size/words.length<0.45)return true;
+    }
+    return false;
+  }
+
   async function getLocalPipe(onState){
     if(!localPipePromise){
       localPipePromise=(async()=>{
-        onState?.('برای اولین بار مدل صدا روی گوشی در حال آماده‌شدن است…');
+        onState?.('مدل دقیق فارسی در حال آماده‌شدن است…');
         const mod=await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
         try{mod.env.useBrowserCache=true}catch(_){ }
-        return await mod.pipeline('automatic-speech-recognition','Xenova/whisper-tiny',{quantized:true,progress_callback:p=>{
-          try{if(p?.status==='progress'&&Number.isFinite(p.progress))onState?.(`آماده‌سازی مدل صدا ${Math.round(p.progress)}٪…`)}catch(_){ }
+        return await mod.pipeline('automatic-speech-recognition','Xenova/whisper-small',{quantized:true,progress_callback:p=>{
+          try{if(p?.status==='progress'&&Number.isFinite(p.progress))onState?.(`آماده‌سازی تشخیص فارسی ${Math.round(p.progress)}٪…`)}catch(_){ }
         }});
       })();
     }
@@ -26,12 +45,19 @@
 
   async function transcribeLocal(blob,onState){
     const pipe=await getLocalPipe(onState);
-    onState?.('در حال تبدیل صدا روی خود دستگاه…');
+    onState?.('دارم فارسی را دقیق تبدیل می‌کنم…');
     const url=URL.createObjectURL(blob);
     try{
-      const out=await pipe(url,{language:'persian',task:'transcribe'});
-      const text=String(out?.text||'').trim();
+      let out=await pipe(url,{language:'fa',task:'transcribe',chunk_length_s:20,stride_length_s:3,return_timestamps:false});
+      let text=String(out?.text||'').trim();
+      if(looksBad(text)){
+        onState?.('یک بار دیگر با تنظیم دقیق فارسی بررسی می‌کنم…');
+        out=await pipe(url,{language:'fa',task:'transcribe',chunk_length_s:15,stride_length_s:4,return_timestamps:false});
+        const retry=String(out?.text||'').trim();
+        if(retry && persianScore(retry)>=persianScore(text))text=retry;
+      }
       if(!text)throw new Error('متنی از صدا تشخیص داده نشد؛ دوباره واضح‌تر بگو.');
+      if(looksBad(text))throw new Error('این جمله را مطمئن نفهمیدم؛ لطفاً یک بار دیگر کمی شمرده‌تر بگو.');
       return text;
     }finally{
       try{URL.revokeObjectURL(url)}catch(_){ }
@@ -52,14 +78,14 @@
         if(done)return;done=true;cleanup();
         try{
           const blob=new Blob(chunks,{type:mr.mimeType||mime||'audio/mp4'});
-          if(blob.size<1200)throw new Error('صدا خیلی کوتاه بود؛ دوباره بگو.');
+          if(blob.size<1800)throw new Error('صدا خیلی کوتاه بود؛ دوباره بگو.');
           const text=await transcribeLocal(blob,opts.onState);
           resolve(text);
         }catch(e){reject(e)}
       };
     });
     mr.start(250);
-    opts.onState?.('دارم گوش می‌دم… برای پایان دوباره بزن.');
+    opts.onState?.('دارم گوش می‌دم… جمله را طبیعی بگو و برای پایان دوباره بزن.');
     return{stop:()=>{if(mr.state!=='inactive')mr.stop()},cancel:()=>{done=true;try{mr.stop()}catch(_){ }cleanup()},result};
   }
 
