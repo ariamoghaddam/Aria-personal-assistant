@@ -17,7 +17,9 @@ export default async function handler(req,res){
     const mode=(req.query?.mode||'transcribe').toString();
     const body=await readRaw(req);
     const ct=(req.headers['content-type']||'application/octet-stream').toString();
-    const r=await fetch(`https://kbwyysfkvprvetninabb.supabase.co/functions/v1/aria-ai?mode=${encodeURIComponent(mode)}`,{
+    const fn = mode==='transcribe' ? 'aria-transcribe' : 'aria-ai';
+    const suffix = mode==='transcribe' ? '' : `?mode=${encodeURIComponent(mode)}`;
+    const r=await fetch(`https://kbwyysfkvprvetninabb.supabase.co/functions/v1/${fn}${suffix}`,{
       method:'POST',
       headers:{Authorization:`Bearer ${token}`,'Content-Type':ct},
       body
