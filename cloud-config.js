@@ -17,7 +17,7 @@ window.ARIA_CLOUD = {
 })();
 
 (async()=>{
-  const marker='ARIA_CACHE_REFRESH_SPOKEN_AI_V19';
+  const marker='ARIA_CACHE_REFRESH_SPOKEN_AI_V20';
   try{if(!localStorage.getItem(marker)){localStorage.setItem(marker,'1');if(window.caches){const keys=await caches.keys();await Promise.all(keys.map(k=>caches.delete(k).catch(()=>false)));}}}catch(e){console.warn('ARIA refresh',e)}
   const load=(src,key)=>new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.defer=true;if(key)s.dataset[key]='1';s.onload=resolve;s.onerror=reject;document.head.appendChild(s);});
   window.addEventListener('load',()=>setTimeout(async()=>{
@@ -40,6 +40,6 @@ window.ARIA_CLOUD = {
     try{await load('./ai-input.js?v=26','ariaAiInput');}catch(e){console.error('ARIA ai input load failed',e);}
     await load('./voice-guard.js?v=26','ariaVoiceGuard').catch(e=>console.error('ARIA voice fallback load failed',e));
     load('./voice-fast.js?v=1','ariaFastVoice').catch(e=>console.error('ARIA fast voice load failed',e));
-    load('./voice-conversation.js?v=1','ariaVoiceConversation').catch(e=>console.error('ARIA spoken conversation load failed',e));
+    load('./voice-conversation.js?v=2','ariaVoiceConversation').catch(e=>console.error('ARIA spoken conversation load failed',e));
   },250));
 })();
