@@ -16,8 +16,25 @@ window.ARIA_CLOUD = {
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',make); else make();setInterval(make,700);window.addEventListener('pageshow',make);
 })();
 
+(function ensurePermanentVoiceEntries(){
+  const addScript=(src,cb)=>{const s=document.createElement('script');s.src=src+(src.includes('?')?'&':'?')+'force='+Date.now();s.onload=()=>setTimeout(cb,80);s.onerror=()=>alert('بخش صدا لود نشد؛ دوباره امتحان کن.');document.head.appendChild(s)};
+  const openConversation=()=>{if(window.ARIA_VOICE_CONVERSATION?.open){window.ARIA_VOICE_CONVERSATION.open();return;}addScript('./voice-conversation.js',()=>window.ARIA_VOICE_CONVERSATION?.open?.())};
+  const openQuick=()=>{if(window.ARIA_FAST_VOICE?.start){window.ARIA_FAST_VOICE.start();return;}addScript('./voice-fast.js',()=>window.ARIA_FAST_VOICE?.start?.())};
+  const make=()=>{
+    if(!document.body)return;
+    let talk=document.getElementById('ariaVoiceTalkBtn');
+    if(!talk){talk=document.createElement('button');talk.id='ariaVoiceTalkBtn';talk.type='button';talk.textContent='🎧 گفتگو';talk.setAttribute('aria-label','گفت‌وگوی صوتی با ARIA');talk.style.cssText='position:fixed;right:14px;bottom:calc(202px + env(safe-area-inset-bottom));z-index:2147483647;min-width:76px;height:54px;padding:0 14px;border:0;border-radius:18px;background:linear-gradient(135deg,#7c4dff,#3f8cff);color:#fff;font-weight:900;font-size:15px;box-shadow:0 12px 32px rgba(0,0,0,.5);display:block!important;visibility:visible!important;opacity:1!important';document.body.appendChild(talk)}
+    talk.onclick=openConversation;
+    let quick=document.getElementById('ariaQuickVoice');
+    if(!quick){quick=document.createElement('button');quick.id='ariaQuickVoice';quick.type='button';quick.textContent='🎙';quick.setAttribute('aria-label','ثبت سریع با صدا');quick.style.cssText='position:fixed;left:14px;bottom:calc(204px + env(safe-area-inset-bottom));z-index:2147483600;width:54px;height:54px;border-radius:18px;border:1px solid #33495a;background:#101820;color:#fff;font-size:23px;box-shadow:0 10px 28px rgba(0,0,0,.4);display:block!important;visibility:visible!important;opacity:1!important';document.body.appendChild(quick)}
+    quick.onclick=openQuick;
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',make);else make();
+  setInterval(make,900);window.addEventListener('pageshow',make);
+})();
+
 (async()=>{
-  const marker='ARIA_CACHE_REFRESH_PERSIAN_VOICE_V25';
+  const marker='ARIA_CACHE_REFRESH_PERSIAN_VOICE_V26';
   try{if(!localStorage.getItem(marker)){localStorage.setItem(marker,'1');if(window.caches){const keys=await caches.keys();await Promise.all(keys.map(k=>caches.delete(k).catch(()=>false)));}}}catch(e){console.warn('ARIA refresh',e)}
   const load=(src,key)=>new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.defer=true;if(key)s.dataset[key]='1';s.onload=resolve;s.onerror=reject;document.head.appendChild(s);});
   const fresh=src=>src+(src.includes('?')?'&':'?')+'fresh='+Date.now();
