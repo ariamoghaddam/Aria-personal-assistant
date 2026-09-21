@@ -56,10 +56,20 @@
     const first=main.firstElementChild;
     if(first)first.after(box);else main.appendChild(box);
   }
-  let raf=0;
+  let raf=0,patched=false;
   function schedule(){cancelAnimationFrame(raf);raf=requestAnimationFrame(renderUnified)}
-  window.addEventListener('load',()=>setTimeout(schedule,700));
+  function patchRender(){
+    if(patched)return;
+    try{
+      if(typeof render==='function'){
+        const base=render;
+        render=function(){const out=base.apply(this,arguments);setTimeout(schedule,0);return out};
+        try{window.render=render}catch(_){}
+        patched=true;
+      }
+    }catch(_){}
+  }
+  window.addEventListener('load',()=>{setTimeout(()=>{patchRender();schedule()},700)});
   window.addEventListener('pageshow',schedule);
-  new MutationObserver(schedule).observe(document.documentElement,{childList:true,subtree:true});
-  setTimeout(schedule,1000);
+  setTimeout(()=>{patchRender();schedule()},1000);
 })();
