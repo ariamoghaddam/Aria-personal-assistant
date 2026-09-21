@@ -32,8 +32,7 @@
         return await window.ARIA_SERVER_TRANSCRIBE(blob);
       }catch(e){
         const m=String(e?.message||e||'');
-        if(/ورود ARIA|401|unauthorized/i.test(m))throw e;
-        onState?.('سرویس آنلاین پاسخ نداد؛ موتور جایگزین فارسی را امتحان می‌کنم…');
+        onState?.(/ورود ARIA|401|unauthorized/i.test(m)?'سرویس آنلاین پاسخ نداد؛ با موتور فارسی جایگزین ادامه می‌دهم…':'سرویس آنلاین پاسخ نداد؛ موتور جایگزین فارسی را امتحان می‌کنم…');
       }
     }
     const pipe=await getPipe(onState);
