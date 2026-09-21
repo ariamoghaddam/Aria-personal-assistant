@@ -26,14 +26,36 @@
     return a.sort((x,y)=>x.time.localeCompare(y.time)||x.ord-y.ord);
   }
   function section(title,date){
-    const a=itemsFor(date);
-    return '<section class="card section udsSection" data-uds-date="'+date+'"><div class="sectionHead"><b>'+title+'</b><span class="sub">'+a.length+' مورد</span></div><div class="udsList">'+(a.length?a.map(x=>x.html).join(''):'<div class="empty">برنامه‌ای ثبت نشده.</div>')+'</div></section>';
+    const a=itemsFor(date),d=D()||{};
+    const tasks=(d.tasks||[]).filter(t=>t.date===date&&t.status!=='done').length;
+    const meetings=(d.meetings||[]).filter(m=>m.date===date&&kindMeeting(m)==='جلسه').length;
+    const appointments=(d.meetings||[]).filter(m=>m.date===date&&kindMeeting(m)==='قرار').length;
+    const isToday=date===todayISO2(),cls=isToday?'udsToday':'udsTomorrow',icon=isToday?'☀️':'🌙';
+    return '<section class="card section udsSection '+cls+'" data-uds-date="'+date+'">'+
+      '<div class="udsSectionGlow"></div>'+
+      '<div class="udsHead"><div class="udsHeadTitle"><span class="udsDayIcon">'+icon+'</span><div><b>'+title+'</b><small>'+(isToday?'برنامه روزت یک‌جا':'نگاه سریع به فردا')+'</small></div></div><span class="udsCount">'+a.length+' مورد</span></div>'+
+      '<div class="udsSummary">'+
+        '<span class="udsChip work">✓ '+tasks+' کار</span>'+
+        '<span class="udsChip meeting">◫ '+meetings+' جلسه</span>'+
+        '<span class="udsChip appointment">◉ '+appointments+' قرار</span>'+
+      '</div>'+
+      '<div class="udsList">'+(a.length?a.map(x=>x.html).join(''):'<div class="udsEmpty"><span>✦</span><b>برنامه‌ای ثبت نشده</b><small>فعلاً این روز خلوت است.</small></div>')+'</div></section>';
   }
   function style(){
     if(document.getElementById('ariaUnifiedDashStyle'))return;
     const s=document.createElement('style');s.id='ariaUnifiedDashStyle';s.textContent=`
-      .udsList{display:grid;gap:9px;margin-top:10px}.udsItem{position:relative;width:100%;display:flex;align-items:stretch;text-align:right;padding:0;overflow:hidden;border:1px solid var(--line);background:linear-gradient(145deg,rgba(20,32,42,.96),rgba(12,22,30,.96));border-radius:16px;color:var(--text);box-shadow:0 8px 24px rgba(0,0,0,.16)}
-      .udsItem:active{transform:scale(.992)}.udsRail{width:5px;flex:0 0 5px}.udsMain{display:grid;gap:8px;padding:12px 13px;width:100%}.udsTop{display:flex;align-items:center;justify-content:space-between;gap:10px}.udsTop b{font-size:14px}.udsType{font-size:10px;font-weight:900;border-radius:999px;padding:4px 8px;border:1px solid transparent;white-space:nowrap}.udsType.task{background:#2dd4bf18;color:#5fe8d5;border-color:#2dd4bf44}.udsMeta{display:flex;gap:7px;flex-wrap:wrap}.udsTime,.udsProject{font-size:10px;color:var(--muted);padding:4px 7px;border-radius:999px;background:#0c151d;border:1px solid #243743}.udsProject[style]{border-color:color-mix(in srgb,var(--pc) 45%,#243743)}.udsSection{border-color:#304354}
+      .udsSection{position:relative;overflow:hidden;border:1px solid #304354;background:linear-gradient(145deg,rgba(17,29,40,.98),rgba(10,18,26,.98));box-shadow:0 18px 42px rgba(0,0,0,.24)}
+      .udsSectionGlow{position:absolute;inset:-80px auto auto -60px;width:210px;height:210px;border-radius:50%;filter:blur(10px);opacity:.16;pointer-events:none}
+      .udsToday .udsSectionGlow{background:#2dd4bf}.udsTomorrow .udsSectionGlow{background:#7c6cff}
+      .udsHead{position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px}.udsHeadTitle{display:flex;align-items:center;gap:10px}.udsHeadTitle b{display:block;font-size:16px}.udsHeadTitle small{display:block;color:var(--muted);font-size:10px;margin-top:3px}
+      .udsDayIcon{width:38px;height:38px;border-radius:13px;display:grid;place-items:center;font-size:18px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(145deg,rgba(255,255,255,.09),rgba(255,255,255,.025));box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+      .udsCount{font-size:10px;font-weight:900;padding:6px 9px;border-radius:999px;color:#eafaff;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)}
+      .udsSummary{position:relative;display:flex;gap:6px;flex-wrap:wrap;margin-top:11px}.udsChip{font-size:10px;font-weight:800;padding:5px 8px;border-radius:999px;border:1px solid transparent}
+      .udsChip.work{color:#67ead7;background:#2dd4bf12;border-color:#2dd4bf35}.udsChip.meeting{color:#ffc16b;background:#ff9f4312;border-color:#ff9f4338}.udsChip.appointment{color:#bba8ff;background:#9b7cff12;border-color:#9b7cff38}
+      .udsList{position:relative;display:grid;gap:9px;margin-top:12px}.udsItem{position:relative;width:100%;display:flex;align-items:stretch;text-align:right;padding:0;overflow:hidden;border:1px solid rgba(255,255,255,.07);background:linear-gradient(145deg,rgba(25,39,51,.98),rgba(13,24,33,.98));border-radius:17px;color:var(--text);box-shadow:0 9px 24px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.025);transition:.16s ease}
+      .udsItem:hover{border-color:rgba(255,255,255,.13);transform:translateY(-1px)}.udsItem:active{transform:scale(.992)}.udsRail{width:5px;flex:0 0 5px}.udsMain{display:grid;gap:8px;padding:13px 14px;width:100%}.udsTop{display:flex;align-items:center;justify-content:space-between;gap:10px}.udsTop b{font-size:14px}.udsType{font-size:10px;font-weight:900;border-radius:999px;padding:4px 8px;border:1px solid transparent;white-space:nowrap}.udsType.task{background:#2dd4bf18;color:#5fe8d5;border-color:#2dd4bf44}.udsMeta{display:flex;gap:7px;flex-wrap:wrap}.udsTime,.udsProject{font-size:10px;color:#a9bac4;padding:4px 7px;border-radius:999px;background:#0b151e;border:1px solid #243743}.udsProject[style]{border-color:color-mix(in srgb,var(--pc) 45%,#243743)}
+      .udsEmpty{display:grid;place-items:center;gap:5px;padding:24px 10px;border:1px dashed rgba(255,255,255,.09);border-radius:16px;background:rgba(255,255,255,.018);color:var(--muted)}.udsEmpty span{font-size:24px;color:#59d9f3}.udsEmpty b{color:#dbe7ed;font-size:12px}.udsEmpty small{font-size:10px}
+      @media(max-width:600px){.udsSection{padding:13px}.udsHeadTitle b{font-size:15px}.udsDayIcon{width:36px;height:36px}.udsSummary{gap:5px}.udsChip{font-size:9px}}
     `;document.head.appendChild(s)
   }
   function hideLegacyToday(){
