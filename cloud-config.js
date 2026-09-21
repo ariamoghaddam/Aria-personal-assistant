@@ -16,7 +16,7 @@ window.ARIA_CLOUD = {
     await load('./theme-ui.js?v=1','ariaTheme').catch(e=>console.error('ARIA theme load failed',e));
     load('./settings-ui.js?v=2','ariaSettings').catch(e=>console.error('ARIA settings load failed',e));
     await load('./ai-fetch-guard.js?v=1','ariaAiFetchGuard').catch(e=>console.error('ARIA AI timeout guard load failed',e));
-    load('./aria-brain.js?v=8','ariaBrain').catch(e=>console.error('ARIA brain load failed',e));
+    load('./aria-brain.js?v=9','ariaBrain').catch(e=>console.error('ARIA brain load failed',e));
     load('./notification-center.js?v=6','ariaNotifications').catch(e=>console.error('ARIA notification load failed',e));
     load('./routine-manager.js?v=1','ariaRoutines').catch(e=>console.error('ARIA routine manager load failed',e));
     load('./mental-rest.js?v=2','ariaMentalRest').catch(e=>console.error('ARIA mental rest load failed',e));
@@ -31,7 +31,7 @@ window.ARIA_CLOUD = {
     await load('./music-suite.js?v=1','ariaMusicPro').catch(e=>console.error('ARIA music pro load failed',e));
     load('./music-metronome.js?v=2','ariaMetronome').catch(e=>console.error('ARIA metronome load failed',e));
     load('./handwriting-local.js?v=2','ariaHandLocal').catch(e=>console.error('ARIA handwriting load failed',e));
-    try{await load('./ai-input.js?v=26','ariaAiInput');}catch(e){console.error('ARIA ai input load failed',e);}
+    try{await load('./ai-input.js?v=27','ariaAiInput');}catch(e){console.error('ARIA ai input load failed',e);}
     await load(fresh('./voice-engine.js'),'ariaVoiceEngine').catch(e=>console.error('ARIA voice engine load failed',e));
     load(fresh('./voice-fast.js'),'ariaFastVoice').catch(e=>console.error('ARIA fast voice load failed',e));
     load(fresh('./voice-conversation.js'),'ariaVoiceConversation').catch(e=>console.error('ARIA spoken conversation load failed',e));
