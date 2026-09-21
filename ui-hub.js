@@ -80,6 +80,5 @@
   }
   function maintain(){cleanupStandalone();removeStandaloneFocus();build()}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',maintain);else maintain();
-  new MutationObserver(maintain).observe(document.documentElement,{childList:true,subtree:true});
   window.addEventListener('pageshow',maintain);
 })();
