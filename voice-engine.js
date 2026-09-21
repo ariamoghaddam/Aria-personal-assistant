@@ -26,18 +26,23 @@
   }
 
   async function transcribe(blob,onState){
+    if(window.ARIA_SERVER_TRANSCRIBE){
+      try{
+        onState?.('دارم صدات رو دقیق به فارسی تبدیل می‌کنم…');
+        return await window.ARIA_SERVER_TRANSCRIBE(blob);
+      }catch(e){
+        const m=String(e?.message||e||'');
+        if(/ورود ARIA|401|unauthorized/i.test(m))throw e;
+        onState?.('سرویس آنلاین پاسخ نداد؛ موتور جایگزین فارسی را امتحان می‌کنم…');
+      }
+    }
     const pipe=await getPipe(onState);
-    onState?.('دارم صدات رو به فارسی تبدیل می‌کنم…');
     const url=URL.createObjectURL(blob);
     try{
       const out=await pipe(url,{language:'fa',task:'transcribe',chunk_length_s:18,stride_length_s:3,return_timestamps:false});
       const text=String(out?.text||'').replace(/\s+/g,' ').trim();
       if(!text)throw new Error('چیزی از صدات متوجه نشدم؛ دوباره بگو.');
       return text;
-    }catch(e){
-      const m=String(e?.message||e||'');
-      if(/load failed|fetch|network/i.test(m))throw new Error('موتور فارسی کامل لود نشد؛ اینترنت رو چک کن و یک بار دیگه بزن.');
-      throw e;
     }finally{
       try{URL.revokeObjectURL(url)}catch(_){ }
     }
