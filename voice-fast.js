@@ -1,5 +1,5 @@
 (function(){
-  if(window.__ARIA_VOICE_FAST_V3)return;window.__ARIA_VOICE_FAST_V3=true;
+  if(window.__ARIA_VOICE_FAST_V4)return;window.__ARIA_VOICE_FAST_V3=true;
   const $=id=>document.getElementById(id);
   const norm=s=>String(s||'').trim().replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[\u064B-\u065F]/g,'').replace(/\s+/g,' ');
   const en=s=>String(s||'').replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d));
@@ -34,6 +34,7 @@
     s=s.replace(/(?:برام|برای من|واسم|لطفا|لطفاً|میخوام|می‌خوام|می خواهم|می‌خواهم)/g,' ');
     s=s.replace(/(?:اضافه کن|ثبت کن|بساز|قرار بده|بذار|بگذار|یادم بنداز|یادم بینداز)/g,' ');
     s=s.replace(/(?:یه|یک)?\s*(?:کار|تسک)\s*(?:جدید)?/g,' ');
+    s=s.replace(/(?:برای\s*)?(?:من\s*)?(?:یک\s*)?(?=جلسه|قرار)/g,' ');
     try{for(const p of db?.projects||[]){const name=norm(p.name);if(name)s=s.replace(new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g'),' ')}}catch(_){}
     return s.replace(/\s+/g,' ').replace(/^[،,:؛\-\s]+|[،,:؛\-\s]+$/g,'').trim();
   }
@@ -52,12 +53,12 @@
     lastPlan=p;$('afvPlan').style.display='block';
     const kind=p.type==='meeting'?'🟠 جلسه':p.type==='appointment'?'🟣 قرار':'🟢 کار';
     $('afvPlan').innerHTML=`<b>${escapeHtml(p.title)}</b><br>${kind}<br>📁 ${escapeHtml(p.projectName)}${p.people?`<br>👤 ${escapeHtml(p.people)}`:''}${p.date?`<br>📅 ${p.date}`:''}${p.time?`<br>⏰ ${p.time}`:''}${p.repeat==='daily'?'<br>🔁 هر روز':''}`;
-    $('afvConfirm').style.display='inline-block';$('afvState').textContent='اگر درست است، «اوکی، ثبت کن» را بزن.';
+    $('afvConfirm').style.display='inline-block';$('afvState').textContent='اگر درست است، «اوکی، ثبت کن» را بزن؛ بدون نیاز به AI آنلاین.';
   }
   function ensureUI(){
     if(!$('ariaFastVoiceSheet')){
       const d=document.createElement('dialog');d.id='ariaFastVoiceSheet';d.style.cssText='width:min(560px,94vw);border:0;border-radius:22px;background:#fff;color:#14202a;padding:16px;direction:rtl';
-      d.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="font-size:18px">🎙 ثبت سریع با صدا</b><button id="afvClose" class="ghost">بستن</button></div><div id="afvState" style="margin-top:12px;color:#7a8b96;font-size:13px">آماده</div><div id="afvHeard" style="margin-top:10px;padding:12px;border:1px solid #b8c6cf;border-radius:14px;min-height:54px;line-height:1.9"></div><div id="afvPlan" style="display:none;margin-top:10px;padding:12px;background:#f1f5f7;border-radius:14px;line-height:2"></div><div style="display:flex;gap:8px;margin-top:12px"><button id="afvRetry" style="flex:1">🎙 شروع صحبت</button><button id="afvConfirm" class="primary" style="flex:1;display:none">✓ اوکی، ثبت کن</button></div>';
+      d.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="font-size:18px">🎙 دستور صوتی ARIA</b><button id="afvClose" class="ghost">بستن</button></div><div id="afvState" style="margin-top:12px;color:#7a8b96;font-size:13px">آماده</div><div id="afvHeard" style="margin-top:10px;padding:12px;border:1px solid #b8c6cf;border-radius:14px;min-height:54px;line-height:1.9"></div><div id="afvPlan" style="display:none;margin-top:10px;padding:12px;background:#f1f5f7;border-radius:14px;line-height:2"></div><div style="display:flex;gap:8px;margin-top:12px"><button id="afvRetry" style="flex:1">🎙 شروع صحبت</button><button id="afvConfirm" class="primary" style="flex:1;display:none">✓ اوکی، ثبت کن</button></div>';
       document.body.appendChild(d);
       $('afvClose').onclick=()=>{active?.cancel?.();active=null;try{d.close()}catch{d.removeAttribute('open')}};
       $('afvRetry').onclick=start;$('afvConfirm').onclick=commit;
@@ -69,23 +70,19 @@
   async function start(){
     ensureUI();const d=$('ariaFastVoiceSheet');try{if(!d.open)d.showModal()}catch{d.setAttribute('open','')}
     if(active&&active.result){
-      $('afvState').textContent='در حال تبدیل صدا…';active.stop();$('afvRetry').textContent='🎙 شروع صحبت';
-      try{const text=await active.result;$('afvHeard').textContent=norm(text);showPlan(plan(text))}catch(e){$('afvState').textContent=e?.message||'صدا تشخیص داده نشد.'}finally{active=null}return;
+      $('afvState').textContent='در حال تبدیل دقیق فارسی…';active.stop();$('afvRetry').textContent='🎙 شروع صحبت';
+      try{
+        const text=norm(await active.result);
+        $('afvHeard').textContent=text;
+        const p=plan(text);
+        showPlan(p);
+        if(!p.date&&/(فردا|امروز|پس\s*فردا|شنبه|یکشنبه|دوشنبه|سه.?شنبه|چهارشنبه|پنجشنبه|جمعه)/.test(text))$('afvState').textContent='تاریخ را کامل متوجه نشدم؛ متن را ببین و اگر لازم است دوباره بگو.';
+        else if((p.type==='meeting'||p.type==='appointment')&&!p.time)$('afvState').textContent='جلسه/قرار را فهمیدم؛ اگر ساعت گفتی ولی اینجا نیست، دوباره واضح‌تر بگو.';
+      }catch(e){$('afvState').textContent=e?.message||'صدا تشخیص داده نشد.'}finally{active=null}
+      return;
     }
     if(active){active.stop?.();active=null;return}
     $('afvPlan').style.display='none';$('afvConfirm').style.display='none';$('afvHeard').textContent='';lastPlan=null;
-    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-    if(SR){
-      try{
-        const r=new SR();r.lang='fa-IR';r.interimResults=false;r.maxAlternatives=3;let got=false;
-        active={stop:()=>{try{r.stop()}catch(_){}},cancel:()=>{try{r.abort()}catch(_){}}};
-        $('afvState').textContent='🔴 گوش می‌دم؛ جمله را کامل بگو…';$('afvRetry').textContent='⏹ پایان صحبت';
-        r.onresult=e=>{got=true;const text=norm(e.results?.[0]?.[0]?.transcript||'');$('afvHeard').textContent=text;showPlan(plan(text));active=null;$('afvRetry').textContent='🎙 شروع صحبت'};
-        r.onerror=async()=>{if(got)return;active=null;$('afvRetry').textContent='🎙 شروع صحبت';await startRecorderFallback()};
-        r.onend=()=>{if(!got&&active){active=null;$('afvRetry').textContent='🎙 شروع صحبت';$('afvState').textContent='صدایی دریافت نشد؛ دوباره بگو.'}};
-        r.start();return;
-      }catch(_){ }
-    }
     await startRecorderFallback();
   }
   function commit(){
