@@ -32,7 +32,7 @@ window.ARIA_CLOUD = {
     load('./music-metronome.js?v=2','ariaMetronome').catch(e=>console.error('ARIA metronome load failed',e));
     load('./handwriting-local.js?v=2','ariaHandLocal').catch(e=>console.error('ARIA handwriting load failed',e));
     try{await load('./ai-input.js?v=27','ariaAiInput');}catch(e){console.error('ARIA ai input load failed',e);}
-    await load(fresh('./voice-engine.js'),'ariaVoiceEngine').catch(e=>console.error('ARIA voice engine load failed',e));
+    await load('./voice-engine.js?v=9','ariaVoiceEngine').catch(e=>console.error('ARIA voice engine load failed',e));
     load(fresh('./voice-fast.js?v=3'),'ariaFastVoice').catch(e=>console.error('ARIA fast voice load failed',e));
     load(fresh('./voice-conversation.js'),'ariaVoiceConversation').catch(e=>console.error('ARIA spoken conversation load failed',e));
   },250));
