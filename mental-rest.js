@@ -154,10 +154,23 @@
   function open(){build();$('mrDump').value=localStorage.getItem(KEY+'_DUMP')||'';try{$('ariaMentalRestDialog').showModal()}catch(_){$('ariaMentalRestDialog').setAttribute('open','')}}
   function inject(){
     if(!document.body)return;
+    const side=document.getElementById('sideNav');
+    if(side&&!document.getElementById('ariaMentalRestNav')){
+      const nb=document.createElement('button');
+      nb.id='ariaMentalRestNav';nb.type='button';nb.textContent='🧠 استراحت ذهن';
+      nb.onclick=e=>{e.preventDefault();e.stopPropagation();open()};
+      side.appendChild(nb);
+    }
     if(!$('ariaMentalRestFab')){
       const b=document.createElement('button');b.id='ariaMentalRestFab';b.type='button';b.innerHTML='🧠 <span>استراحت ذهن</span>';
       b.style.cssText='position:fixed;right:14px;bottom:calc(266px + env(safe-area-inset-bottom));z-index:2147483000;height:54px;padding:0 14px;border:1px solid rgba(79,124,255,.5);border-radius:18px;background:linear-gradient(135deg,#0d2b59,#12334b);color:#dffaff;font-weight:900;box-shadow:0 10px 30px rgba(0,0,0,.45);display:flex;align-items:center;gap:7px';
       b.onclick=open;document.body.appendChild(b);
+    }
+    const top=document.querySelector('.top');
+    if(top&&!document.getElementById('ariaMentalRestTop')){
+      const tb=document.createElement('button');tb.id='ariaMentalRestTop';tb.type='button';tb.textContent='🧠 استراحت ذهن';
+      tb.style.cssText='background:linear-gradient(135deg,#173b6d,#1f5a5e);font-weight:800';
+      tb.onclick=open;top.appendChild(tb);
     }
     const q=document.querySelector('.quick');
     if(q&&!q.querySelector('[data-mental-rest]')){const b=document.createElement('button');b.dataset.mentalRest='1';b.textContent='🧠 استراحت ذهن';b.style.background='linear-gradient(135deg,#173b6d,#1f5a5e)';b.onclick=open;q.appendChild(b)}
