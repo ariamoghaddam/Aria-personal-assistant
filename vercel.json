@@ -1,6 +1,10 @@
 {
   "headers": [
     {
+      "source": "/supabase-lite.js",
+      "headers": [{"key":"Cache-Control","value":"no-store, no-cache, must-revalidate, max-age=0"}]
+    },
+    {
       "source": "/cloud-sync.js",
       "headers": [{"key":"Cache-Control","value":"no-store, no-cache, must-revalidate, max-age=0"}]
     },
