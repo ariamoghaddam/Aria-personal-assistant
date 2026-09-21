@@ -84,7 +84,7 @@
   function ensureUI(){
     if(!$('ariaFastVoiceSheet')){
       const d=document.createElement('dialog');d.id='ariaFastVoiceSheet';d.style.cssText='width:min(560px,94vw);border:0;border-radius:22px;background:#fff;color:#14202a;padding:16px;direction:rtl';
-      d.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="font-size:18px">🎙 فرمان صوتی ARIA</b><button id="afvClose" class="ghost">بستن</button></div><div id="afvState" style="margin-top:12px;color:#7a8b96;font-size:13px">مثلاً بگو: «فردا ساعت ۱۲ جلسه با مهندس احمدی» — ARIA خودش تاریخ، ساعت و نوع جلسه را می‌فهمد</div><div id="afvHeard" style="margin-top:10px;padding:12px;border:1px solid #b8c6cf;border-radius:14px;min-height:54px;line-height:1.9"></div><div id="afvPlan" style="display:none;margin-top:10px;padding:12px;background:#f1f5f7;border-radius:14px;line-height:2"></div><div style="display:flex;gap:8px;margin-top:12px"><button id="afvRetry" style="flex:1">🎙 بگو</button><button id="afvConfirm" class="primary" style="flex:1;display:none">✓ اوکی، ثبت کن</button></div>';
+      d.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="font-size:18px">🎙 فرمان صوتی ARIA</b><button id="afvClose" class="ghost">بستن</button></div><div id="afvState" style="margin-top:12px;color:#7a8b96;font-size:13px">مثلاً بگو: «فردا ساعت ۱۲ جلسه با مهندس احمدی» — یک‌بار بزن و صحبت کن، بعد برای پایان دوباره بزن</div><div id="afvHeard" style="margin-top:10px;padding:12px;border:1px solid #b8c6cf;border-radius:14px;min-height:54px;line-height:1.9"></div><div id="afvPlan" style="display:none;margin-top:10px;padding:12px;background:#f1f5f7;border-radius:14px;line-height:2"></div><div style="display:flex;gap:8px;margin-top:12px"><button id="afvRetry" style="flex:1">🎙 بگو</button><button id="afvConfirm" class="primary" style="flex:1;display:none">✓ اوکی، ثبت کن</button></div>';
       document.body.appendChild(d);
       $('afvClose').onclick=()=>{active?.cancel?.();active=null;try{d.close()}catch{d.removeAttribute('open')}};
       $('afvRetry').onclick=start;$('afvConfirm').onclick=commit;
@@ -95,9 +95,25 @@
   }
   async function start(){
     ensureUI();const d=$('ariaFastVoiceSheet');try{if(!d.open)d.showModal()}catch{d.setAttribute('open','')}
+    if(active&&active.result){
+      $('afvState').textContent='در حال تبدیل دقیق صدای فارسی…';active.stop();$('afvRetry').textContent='🎙 شروع صحبت';
+      try{
+        const text=await active.result;
+        $('afvHeard').textContent=norm(text);
+        showPlan(plan(text));
+        $('afvState').textContent='شنیدم. اگر اطلاعات درست است، «اوکی، ثبت کن» را بزن.';
+      }catch(e){
+        $('afvState').textContent=e?.message||'صدا تشخیص داده نشد.';
+      }finally{active=null;$('afvRetry').textContent='🎙 دوباره بگو'}
+      return;
+    }
+    if(active){active.stop?.();active=null;return}
+    $('afvPlan').style.display='none';$('afvConfirm').style.display='none';$('afvHeard').textContent='';lastPlan=null;
+    if(window.ARIA_VOICE_ENGINE){
+      await startRecorderFallback();
+      return;
+    }
     if(canNativeSpeech()){
-      if(active)return;
-      $('afvPlan').style.display='none';$('afvConfirm').style.display='none';$('afvHeard').textContent='';lastPlan=null;
       active={native:true};
       try{
         const text=await nativeSpeech();
@@ -108,16 +124,7 @@
       finally{active=null;$('afvRetry').textContent='🎙 دوباره بگو'}
       return;
     }
-    if(active&&active.result){
-      $('afvState').textContent='در حال تبدیل دقیق صدای فارسی…';active.stop();$('afvRetry').textContent='🎙 شروع صحبت';
-      try{const text=await active.result;$('afvHeard').textContent=norm(text);showPlan(plan(text))}
-      catch(e){$('afvState').textContent=e?.message||'صدا تشخیص داده نشد.'}
-      finally{active=null}
-      return;
-    }
-    if(active){active.stop?.();active=null;return}
-    $('afvPlan').style.display='none';$('afvConfirm').style.display='none';$('afvHeard').textContent='';lastPlan=null;
-    await startRecorderFallback();
+    $('afvState').textContent='موتور تشخیص صدا هنوز آماده نشده؛ چند ثانیه دیگر دوباره بزن.';
   }
   function commit(){
     if(!lastPlan)return;
