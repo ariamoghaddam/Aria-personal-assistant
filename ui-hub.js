@@ -4,7 +4,7 @@
   const css=document.createElement('style');
   css.id='ariaLuxHubStyle';
   css.textContent=`
-    #ariaPermanentAiBtn,#ariaVoiceTalkBtn,#ariaQuickVoice,#ariaMentalRestFab,#ariaMentalRestTop,#ariaMentalRestNav,.ariaFab{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
+    #ariaPermanentAiBtn,#ariaVoiceTalkBtn,#ariaQuickVoice,#ariaMentalRestFab,#ariaMentalRestTop,#ariaMentalRestNav,#ariaBrainFab,#ariaBrainEntryBtn,.ariaFab{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
     #ariaLuxHub{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(88px + env(safe-area-inset-bottom));z-index:2147483646;font-family:inherit}
     .alhTrigger{width:62px;height:62px;padding:0;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:radial-gradient(circle at 30% 25%,#58e7ff 0,#4f7cff 32%,#1f4f75 64%,#0b1927 100%);backdrop-filter:blur(22px) saturate(1.25);-webkit-backdrop-filter:blur(22px) saturate(1.25);box-shadow:0 16px 42px rgba(0,0,0,.48),0 0 26px rgba(79,124,255,.22),inset 0 1px 0 rgba(255,255,255,.28);display:grid;place-items:center;color:#fff;font-weight:950;position:relative;overflow:hidden}
     .alhTrigger .orb{width:100%;height:100%;border-radius:50%;display:grid;place-items:center;background:transparent;box-shadow:none;font-size:22px;letter-spacing:-1px;text-shadow:0 2px 10px rgba(0,0,0,.28)}
@@ -75,7 +75,7 @@
   }
 
   function cleanupStandalone(){
-    ['ariaPermanentAiBtn','ariaVoiceTalkBtn','ariaQuickVoice','ariaMentalRestFab','ariaMentalRestTop','ariaMentalRestNav'].forEach(id=>document.getElementById(id)?.remove());
+    ['ariaPermanentAiBtn','ariaVoiceTalkBtn','ariaQuickVoice','ariaMentalRestFab','ariaMentalRestTop','ariaMentalRestNav','ariaBrainFab','ariaBrainEntryBtn'].forEach(id=>document.getElementById(id)?.remove());
     document.querySelectorAll('.ariaFab').forEach(x=>x.style.setProperty('display','none','important'));
   }
   function maintain(){cleanupStandalone();removeStandaloneFocus();build()}
