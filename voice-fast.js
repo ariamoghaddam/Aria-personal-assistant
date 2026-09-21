@@ -70,15 +70,10 @@
   async function start(){
     ensureUI();const d=$('ariaFastVoiceSheet');try{if(!d.open)d.showModal()}catch{d.setAttribute('open','')}
     if(active&&active.result){
-      $('afvState').textContent='در حال تبدیل دقیق فارسی…';active.stop();$('afvRetry').textContent='🎙 شروع صحبت';
-      try{
-        const text=norm(await active.result);
-        $('afvHeard').textContent=text;
-        const p=plan(text);
-        showPlan(p);
-        if(!p.date&&/(فردا|امروز|پس\s*فردا|شنبه|یکشنبه|دوشنبه|سه.?شنبه|چهارشنبه|پنجشنبه|جمعه)/.test(text))$('afvState').textContent='تاریخ را کامل متوجه نشدم؛ متن را ببین و اگر لازم است دوباره بگو.';
-        else if((p.type==='meeting'||p.type==='appointment')&&!p.time)$('afvState').textContent='جلسه/قرار را فهمیدم؛ اگر ساعت گفتی ولی اینجا نیست، دوباره واضح‌تر بگو.';
-      }catch(e){$('afvState').textContent=e?.message||'صدا تشخیص داده نشد.'}finally{active=null}
+      $('afvState').textContent='در حال تبدیل دقیق صدای فارسی…';active.stop();$('afvRetry').textContent='🎙 شروع صحبت';
+      try{const text=await active.result;$('afvHeard').textContent=norm(text);showPlan(plan(text))}
+      catch(e){$('afvState').textContent=e?.message||'صدا تشخیص داده نشد.'}
+      finally{active=null}
       return;
     }
     if(active){active.stop?.();active=null;return}
