@@ -23,7 +23,15 @@
     return '';
   }
 
-  function getToken(){
+  async function getToken(){
+    try{
+      if(window.supabase?.createClient&&cfg.supabaseUrl&&cfg.supabaseAnonKey){
+        const temp=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey);
+        const r=await temp.auth.getSession();
+        const token=r?.data?.session?.access_token;
+        if(token)return token;
+      }
+    }catch(_){}
     try{
       const lite=localStorage.getItem('ARIA_SUPABASE_LITE_SESSION_V1');
       if(lite){try{const token=findAccessToken(JSON.parse(lite));if(token)return token}catch(_){}}
@@ -50,7 +58,7 @@
   }
 
   async function callAI(mode,body){
-    const token=getToken();
+    const token=await getToken();
     const url=`/api/aria-ai?mode=${encodeURIComponent(mode)}&t=${encodeURIComponent(token)}&v=22`;
     const r=await xhrPost(url,body);
     let out={};try{out=r.text?JSON.parse(r.text):{}}catch{out={detail:r.text||'پاسخ نامعتبر از سرور'}}
@@ -61,6 +69,13 @@
     }
     return out;
   }
+
+  window.ARIA_SERVER_TRANSCRIBE=async blob=>{
+    const out=await callAI('transcribe',blob);
+    const text=String(out?.text||'').trim();
+    if(!text)throw new Error('متنی از صدا تشخیص داده نشد.');
+    return text;
+  };
 
   function installHandwritingDialog(){
     if($('ariaHandwritingDialog'))return;
@@ -95,8 +110,11 @@
     if(!await waitForAsk())return;
     const ta=$('ariaAskText'),vb=$('ariaVoiceBtn');
     ta.setAttribute('lang','fa');ta.setAttribute('dir','rtl');ta.setAttribute('inputmode','text');ta.style.textAlign='right';ta.placeholder='اینجا فارسی تایپ کن؛ یا از «گفتن» و «دست‌خط فارسی» استفاده کن.';
-    vb.style.display='';vb.disabled=false;vb.textContent='🎙 گفتن';
-    vb.onclick=async()=>{try{if(recording)stopRecording();else await startRecording()}catch(e){setMsg(e.message||String(e));recording=false;vb.textContent='🎙 گفتن'}};
+    vb.style.display='';vb.disabled=false;vb.textContent='🎙 دستور صوتی';
+    vb.onclick=async()=>{try{
+      if(window.ARIA_FAST_VOICE?.start){try{$('ariaAskDialog')?.close()}catch(_){};await window.ARIA_FAST_VOICE.start();return}
+      if(recording)stopRecording();else await startRecording()
+    }catch(e){setMsg(e.message||String(e));recording=false;vb.textContent='🎙 دستور صوتی'}};
     installHandwritingDialog();
     if(!$('ariaHandwritingBtn')){const b=document.createElement('button');b.id='ariaHandwritingBtn';b.type='button';b.textContent='✍️ دست‌خط فارسی';b.onclick=()=>window.ARIA_openHandwriting();vb.parentElement?.insertBefore(b,vb.nextSibling)}
     setMsg('ورودی فارسی آماده است: صدا را ضبط کن یا از کادر دست‌خط فارسی استفاده کن.');
