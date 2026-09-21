@@ -25,14 +25,16 @@
 
   function getToken(){
     try{
+      const lite=localStorage.getItem('ARIA_SUPABASE_LITE_SESSION_V1');
+      if(lite){try{const token=findAccessToken(JSON.parse(lite));if(token)return token}catch(_){}}
       const preferred=`sb-${new URL(cfg.supabaseUrl).hostname.split('.')[0]}-auth-token`;
       const keys=[preferred,...Object.keys(localStorage).filter(k=>k.startsWith('sb-')&&k.includes('auth-token'))];
       for(const k of [...new Set(keys)]){
         const raw=localStorage.getItem(k);if(!raw)continue;
-        try{const token=findAccessToken(JSON.parse(raw));if(token)return token}catch(_){ }
+        try{const token=findAccessToken(JSON.parse(raw));if(token)return token}catch(_){}
       }
-    }catch(_){ }
-    throw new Error('برای استفاده از هوش مصنوعی باید یک‌بار از حساب ARIA خارج و دوباره وارد شوی.');
+    }catch(_){}
+    throw new Error('برای استفاده از این قابلیت باید وارد حساب ARIA باشی.');
   }
 
   function xhrPost(url,body){
