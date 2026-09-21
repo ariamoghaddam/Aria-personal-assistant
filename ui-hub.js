@@ -1,13 +1,13 @@
 (function(){
-  if(window.__ARIA_LUX_HUB_V1)return; window.__ARIA_LUX_HUB_V1=true;
+  if(window.__ARIA_LUX_HUB_V2)return; window.__ARIA_LUX_HUB_V2=true;
 
   const css=document.createElement('style');
   css.id='ariaLuxHubStyle';
   css.textContent=`
     #ariaPermanentAiBtn,#ariaVoiceTalkBtn,#ariaQuickVoice,#ariaMentalRestFab,#ariaMentalRestTop,#ariaMentalRestNav,.ariaFab{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
     #ariaLuxHub{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(88px + env(safe-area-inset-bottom));z-index:2147483646;font-family:inherit}
-    .alhTrigger{height:52px;padding:0 16px;border-radius:18px;border:1px solid rgba(255,255,255,.13);background:linear-gradient(135deg,rgba(10,25,40,.96),rgba(18,42,55,.96));backdrop-filter:blur(22px) saturate(1.2);-webkit-backdrop-filter:blur(22px) saturate(1.2);box-shadow:0 16px 38px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.09);display:flex;align-items:center;gap:9px;color:#eefcff;font-weight:900}
-    .alhTrigger .orb{width:31px;height:31px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(145deg,#4f7cff,#2dd4bf);box-shadow:0 0 22px rgba(45,212,191,.28)}
+    .alhTrigger{width:62px;height:62px;padding:0;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:radial-gradient(circle at 30% 25%,#58e7ff 0,#4f7cff 32%,#1f4f75 64%,#0b1927 100%);backdrop-filter:blur(22px) saturate(1.25);-webkit-backdrop-filter:blur(22px) saturate(1.25);box-shadow:0 16px 42px rgba(0,0,0,.48),0 0 26px rgba(79,124,255,.22),inset 0 1px 0 rgba(255,255,255,.28);display:grid;place-items:center;color:#fff;font-weight:950;position:relative;overflow:hidden}
+    .alhTrigger .orb{width:100%;height:100%;border-radius:50%;display:grid;place-items:center;background:transparent;box-shadow:none;font-size:22px;letter-spacing:-1px;text-shadow:0 2px 10px rgba(0,0,0,.28)}
     .alhPanel{position:absolute;left:50%;bottom:62px;transform:translateX(-50%) translateY(8px) scale(.98);width:min(520px,94vw);padding:12px;border-radius:24px;border:1px solid rgba(255,255,255,.13);background:linear-gradient(155deg,rgba(10,20,30,.985),rgba(15,31,43,.985));box-shadow:0 24px 60px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.08);backdrop-filter:blur(28px) saturate(1.25);-webkit-backdrop-filter:blur(28px) saturate(1.25);opacity:0;pointer-events:none;transition:.18s ease}
     #ariaLuxHub.open .alhPanel{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(0) scale(1)}
     .alhTitle{display:flex;align-items:center;justify-content:space-between;padding:2px 4px 10px;color:#d8e7ef;font-size:12px}.alhTitle b{font-size:13px;color:#fff}
@@ -63,7 +63,7 @@
           <button class="alhItem" data-a="rest"><span class="alhIcon alhRest">🧠</span><span>استراحت ذهن</span></button>
         </div>
       </div>
-      <button class="alhTrigger" type="button"><span class="orb">✦</span><span>ARIA</span></button>`;
+      <button class="alhTrigger" type="button" aria-label="باز کردن ARIA"><span class="orb">A✦</span></button>`;
     document.body.appendChild(w);
     w.querySelector('.alhTrigger').onclick=()=>w.classList.toggle('open');
     w.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{
@@ -74,7 +74,11 @@
     document.addEventListener('click',e=>{if(!w.contains(e.target))w.classList.remove('open')});
   }
 
-  function maintain(){removeStandaloneFocus();build()}
+  function cleanupStandalone(){
+    ['ariaPermanentAiBtn','ariaVoiceTalkBtn','ariaQuickVoice','ariaMentalRestFab','ariaMentalRestTop','ariaMentalRestNav'].forEach(id=>document.getElementById(id)?.remove());
+    document.querySelectorAll('.ariaFab').forEach(x=>x.style.setProperty('display','none','important'));
+  }
+  function maintain(){cleanupStandalone();removeStandaloneFocus();build()}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',maintain);else maintain();
   new MutationObserver(maintain).observe(document.documentElement,{childList:true,subtree:true});
   window.addEventListener('pageshow',maintain);
