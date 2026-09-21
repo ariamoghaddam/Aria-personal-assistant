@@ -72,11 +72,10 @@
     const main=document.getElementById('main');if(!main)return;
     hideLegacyToday();
     const td=todayISO2(),tm=addDays2(td,1);
-    const old=main.querySelector('[data-aria-unified-dashboard]');if(old)old.remove();
-    const box=document.createElement('div');box.dataset.ariaUnifiedDashboard='1';
-    box.innerHTML=section('برنامه امروز',td)+section('برنامه فردا',tm);
-    const first=main.firstElementChild;
-    if(first)first.after(box);else main.appendChild(box);
+    const html=section('برنامه امروز',td)+section('برنامه فردا',tm);
+    let box=main.querySelector('[data-aria-unified-dashboard]');
+    if(!box){box=document.createElement('div');box.dataset.ariaUnifiedDashboard='1';const first=main.firstElementChild;if(first)first.after(box);else main.appendChild(box)}
+    if(box.dataset.snapshot!==html){box.innerHTML=html;box.dataset.snapshot=html}
   }
   let raf=0,patched=false;
   function schedule(){cancelAnimationFrame(raf);raf=requestAnimationFrame(renderUnified)}
@@ -85,7 +84,7 @@
     try{
       if(typeof render==='function'){
         const base=render;
-        render=function(){const out=base.apply(this,arguments);setTimeout(schedule,0);return out};
+        render=function(){const out=base.apply(this,arguments);renderUnified();return out};
         try{window.render=render}catch(_){}
         patched=true;
       }
