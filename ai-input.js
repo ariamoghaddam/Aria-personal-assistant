@@ -25,6 +25,12 @@
 
   async function getToken(){
     try{
+      if(typeof window.ARIA_GET_AUTH_TOKEN==='function'){
+        const token=await window.ARIA_GET_AUTH_TOKEN();
+        if(token)return token;
+      }
+    }catch(_){}
+    try{
       if(window.supabase?.createClient&&cfg.supabaseUrl&&cfg.supabaseAnonKey){
         const temp=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey);
         const r=await temp.auth.getSession();
