@@ -37,8 +37,8 @@
     addScript('./voice-fast.js',()=>window.ARIA_FAST_VOICE?.start?.());
   }
   function openAsk(){
-    const d=document.getElementById('ariaAskDialog'); if(d){try{d.showModal()}catch{d.setAttribute('open','')}return}
-    document.querySelector('.ariaFab')?.click();
+    if(window.ARIA_FAST_VOICE?.start){window.ARIA_FAST_VOICE.start();return}
+    addScript('./voice-fast.js',()=>window.ARIA_FAST_VOICE?.start?.());
   }
   function openRest(){ if(window.ARIA_MENTAL_REST?.open){window.ARIA_MENTAL_REST.open();return} addScript('./mental-rest.js',()=>window.ARIA_MENTAL_REST?.open?.()) }
 
