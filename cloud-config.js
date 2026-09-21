@@ -21,7 +21,7 @@ window.ARIA_CLOUD = {
     load('./routine-manager.js?v=1','ariaRoutines').catch(e=>console.error('ARIA routine manager load failed',e));
     load('./mental-rest.js?v=2','ariaMentalRest').catch(e=>console.error('ARIA mental rest load failed',e));
     load('./ui-hub.js?v=4','ariaUiHub').catch(e=>console.error('ARIA command center load failed',e));
-    load('./dashboard-unified.js?v=3','ariaUnifiedDash').catch(e=>console.error('ARIA unified dashboard load failed',e));
+    load('./dashboard-unified.js?v=4','ariaUnifiedDash').catch(e=>console.error('ARIA unified dashboard load failed',e));
     load('./delete-fix.js?v=1','ariaDeleteFix').catch(e=>console.error('ARIA delete fix load failed',e));
     await load('./focus-center.js?v=entry5','ariaFocus').catch(e=>console.error('ARIA focus load failed',e));
     load('./focus-distraction-enhance.js?v=entry4','ariaFocusDistraction').catch(e=>console.error('ARIA focus distraction load failed',e));
