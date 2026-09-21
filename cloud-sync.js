@@ -27,6 +27,8 @@ async function ensureClient(){
   if(!client?.auth){client=null;throw new Error('اتصال حساب ARIA ساخته نشد.')}
   return client;
 }
+window.ARIA_GET_AUTH_TOKEN=async()=>{try{const cl=await ensureClient();const r=await cl.auth.getSession();return r?.data?.session?.access_token||''}catch(_){return''}};
+
 async function init(o={}){onState=o.onState||onState;onData=o.onData||onData;onRecovery=o.onRecovery||onRecovery;try{await ensureClient()}catch(e){onState('offline');return{ok:false,error:e?.message||'اتصال ابری در دسترس نیست'}}let{data}=await client.auth.getSession();user=data.session?.user||null;if(user){onState('online');sub();await pull();if(recoveryHint)onRecovery(data.session)}else onState('auth');client.auth.onAuthStateChange((ev,s)=>{user=s?.user||null;if(ev==='PASSWORD_RECOVERY'){onRecovery(s);if(s)onState('online');return}if(user){onState('online');setTimeout(()=>{sub();pull()},0)}else onState('auth')});return{ok:true}}
 async function signIn(email,password){try{await ensureClient();let{data,error}=await client.auth.signInWithPassword({email,password});if(error)return{ok:false,error:error.message};user=data.session?.user||null;onState('online');setTimeout(()=>{sub();pull()},0);return{ok:true}}catch(e){return{ok:false,error:e?.message||'خطا در ورود'}}}
 async function signUp(email,password){try{await ensureClient();let{error}=await client.auth.signUp({email,password,options:{emailRedirectTo:location.origin+'/'}});return error?{ok:false,error:error.message}:{ok:true}}catch(e){return{ok:false,error:e?.message||'خطا در ساخت حساب'}}}
