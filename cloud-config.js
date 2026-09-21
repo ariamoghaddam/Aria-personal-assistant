@@ -47,7 +47,7 @@ window.ARIA_CLOUD = {
     load('./notification-center.js?v=6','ariaNotifications').catch(e=>console.error('ARIA notification load failed',e));
     load('./routine-manager.js?v=1','ariaRoutines').catch(e=>console.error('ARIA routine manager load failed',e));
     load('./delete-fix.js?v=1','ariaDeleteFix').catch(e=>console.error('ARIA delete fix load failed',e));
-    await load('./focus-center.js?v=entry4','ariaFocus').catch(e=>console.error('ARIA focus load failed',e));
+    await load('./focus-center.js?v=entry5','ariaFocus').catch(e=>console.error('ARIA focus load failed',e));
     load('./focus-distraction-enhance.js?v=entry4','ariaFocusDistraction').catch(e=>console.error('ARIA focus distraction load failed',e));
     load('./focus-entry-fix.js?v=1','ariaFocusEntry').catch(e=>console.error('ARIA focus entry failed',e));
     load('./productivity-suite.js?v=1','ariaProductivity').catch(e=>console.error('ARIA productivity load failed',e));
