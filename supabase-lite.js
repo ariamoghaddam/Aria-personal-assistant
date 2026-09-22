@@ -27,6 +27,15 @@ function createClient(base,anon){
   async function token(){const s=await refreshIfNeeded();return s?.access_token||anon}
   const auth={
     async getSession(){const s=await refreshIfNeeded();return{data:{session:s},error:null}},
+    async refreshSession(){
+      let cur=read();
+      if(!cur?.refresh_token)return{data:{session:null},error:new Error('نشست ARIA برای تازه‌سازی پیدا نشد.')};
+      try{
+        const {data}=await api('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:cur.refresh_token})});
+        const next={access_token:data.access_token,refresh_token:data.refresh_token||cur.refresh_token,expires_in:data.expires_in,user:data.user||cur.user,expires_at:Math.floor(Date.now()/1000)+(data.expires_in||3600)};
+        write(next);notify('TOKEN_REFRESHED',next);return{data:{session:next},error:null};
+      }catch(e){return{data:{session:null},error:e}}
+    },
     async signInWithPassword({email,password}){try{const {data}=await api('/auth/v1/token?grant_type=password',{method:'POST',body:JSON.stringify({email,password})});const s={access_token:data.access_token,refresh_token:data.refresh_token,expires_in:data.expires_in,user:data.user,expires_at:Math.floor(Date.now()/1000)+(data.expires_in||3600)};write(s);notify('SIGNED_IN',s);return{data:{session:s,user:data.user},error:null}}catch(e){return{data:{session:null,user:null},error:e}}},
     async signUp({email,password,options={}}){try{const q=options.emailRedirectTo?'?redirect_to='+encodeURIComponent(options.emailRedirectTo):'';const {data}=await api('/auth/v1/signup'+q,{method:'POST',headers:{Authorization:'Bearer '+anon},body:JSON.stringify({email,password})});const s=data?.access_token?{access_token:data.access_token,refresh_token:data.refresh_token,expires_in:data.expires_in,user:data.user,expires_at:Math.floor(Date.now()/1000)+(data.expires_in||3600)}:null;if(s){write(s);notify('SIGNED_IN',s)}return{data:{session:s,user:data?.user||null},error:null}}catch(e){return{data:null,error:e}}},
     async resend({type,email,options={}}){try{const q=options.emailRedirectTo?'?redirect_to='+encodeURIComponent(options.emailRedirectTo):'';await api('/auth/v1/resend'+q,{method:'POST',headers:{Authorization:'Bearer '+anon},body:JSON.stringify({type,email})});return{data:{},error:null}}catch(e){return{data:null,error:e}}},
