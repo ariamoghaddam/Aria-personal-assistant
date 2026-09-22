@@ -64,13 +64,21 @@
   }
 
   async function callAI(mode,body){
-    const token=await getToken();
-    const url=`/api/aria-ai?mode=${encodeURIComponent(mode)}&t=${encodeURIComponent(token)}&v=22`;
-    const r=await xhrPost(url,body);
-    let out={};try{out=r.text?JSON.parse(r.text):{}}catch{out={detail:r.text||'پاسخ نامعتبر از سرور'}}
+    async function once(token){
+      const url=`/api/aria-ai?mode=${encodeURIComponent(mode)}&t=${encodeURIComponent(token)}&v=23`;
+      const r=await xhrPost(url,body);
+      let out={};try{out=r.text?JSON.parse(r.text):{}}catch{out={detail:r.text||'پاسخ نامعتبر از سرور'}}
+      return {r,out};
+    }
+    let token=await getToken();
+    let {r,out}=await once(token);
+    if((r.status===401||out?.error==='unauthorized')&&typeof window.ARIA_REFRESH_AUTH_TOKEN==='function'){
+      const fresh=await window.ARIA_REFRESH_AUTH_TOKEN();
+      if(fresh&&fresh!==token){token=fresh;({r,out}=await once(token))}
+    }
     if(r.status<200||r.status>=300){
       if(out?.error==='OPENAI_API_KEY_MISSING')throw new Error('کلید هوش مصنوعی هنوز روی سرور تنظیم نشده.');
-      if(out?.error==='unauthorized')throw new Error('ورود ARIA منقضی شده؛ یک‌بار از حساب خارج و دوباره وارد شو.');
+      if(out?.error==='unauthorized')throw new Error('نشست ARIA تازه نشد؛ از بخش حساب یک‌بار دوباره وارد شو.');
       throw new Error(out?.detail||out?.error||`خطای سرور (${r.status})`);
     }
     return out;
