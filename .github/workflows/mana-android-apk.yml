@@ -37,7 +37,7 @@ jobs:
         run: npm install
 
       - name: Install Expo native modules compatible with SDK 57
-        run: npx expo install expo-constants expo-device expo-image-picker expo-linking expo-location expo-notifications expo-status-bar expo-task-manager @react-native-async-storage/async-storage react-native-safe-area-context
+        run: npx expo install expo-constants expo-device expo-image-picker expo-location expo-notifications expo-task-manager @react-native-async-storage/async-storage react-native-safe-area-context
 
       - name: Normalize Expo dependency versions
         run: npx expo install --fix
