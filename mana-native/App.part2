@@ -1,0 +1,69 @@
+    setLoading(false);
+    if (error) Alert.alert('ورود ناموفق', 'نام کاربری یا رمز عبور اشتباه است.');
+  }
+
+  async function loadMissions() {
+    const { data, error } = await supabase
+      .from('df_missions')
+      .select('*,project:df_projects(id,name,address,lat,lng,geofence_radius_m)')
+      .order('project_date', { ascending: true })
+      .order('scheduled_time', { ascending: true });
+    if (!error) setMissions((data || []) as Mission[]);
+  }
+
+  const activeMissions = useMemo(() => missions.filter(m => !['completed', 'cancelled'].includes(m.status)), [missions]);
+  const nextMission = activeMissions[0];
+
+  if (!sessionReady) return <SafeAreaView style={styles.center}><ActivityIndicator size="large" color={COLORS.teal} /></SafeAreaView>;
+  if (!userId) return <Login username={username} password={password} setUsername={setUsername} setPassword={setPassword} onLogin={login} loading={loading} />;
+
+  if (selected) {
+    return <MissionDetail
+      mission={selected}
+      onBack={() => { setSelected(null); loadMissions(); }}
+      onDepart={async () => {
+        const t = new Date().toISOString();
+        const { error } = await supabase.from('df_missions').update({ status: 'en_route', departed_at: t, tracking_active: true }).eq('id', selected.id);
+        if (error) return Alert.alert('خطا', error.message);
+        await startMissionLocation(selected.id);
+        setSelected({ ...selected, status: 'en_route', departed_at: t, tracking_active: true });
+      }}
+      onArrive={async () => {
+        const t = new Date().toISOString();
+        const { error } = await supabase.from('df_missions').update({ status: 'on_site', arrived_at: t }).eq('id', selected.id);
+        if (error) return Alert.alert('خطا', error.message);
+        setSelected({ ...selected, status: 'on_site', arrived_at: t });
+      }}
+      onFinish={async () => {
+        if (!finalVolume || Number(finalVolume) <= 0 || !report.trim()) return Alert.alert('اطلاعات ناقص', 'حجم نهایی و گزارش کتبی الزامی است.');
+        if (selected.service !== 'تنظیم بار' && !checklist) return Alert.alert('چک‌لیست', 'برای مأموریت نمونه‌گیری، تصویر چک‌لیست الزامی است.');
+        setLoading(true);
+        try {
+          if (checklist) {
+            const response = await fetch(checklist.uri);
+            const blob = await response.blob();
+            const ext = (checklist.fileName || 'checklist.jpg').split('.').pop() || 'jpg';
+            const path = `${userId}/${selected.id}/${Date.now()}.${ext}`;
+            const upload = await supabase.storage.from('daris-field-checklists').upload(path, blob, { contentType: checklist.mimeType || 'image/jpeg' });
+            if (upload.error) throw upload.error;
+            const ins = await supabase.from('df_checklists').insert({ mission_id: selected.id, uploaded_by: userId, storage_path: path, mime_type: checklist.mimeType || null, size_bytes: checklist.fileSize || null });
+            if (ins.error) throw ins.error;
+          }
+          const { data, error } = await supabase.rpc('df_complete_mission', { p_mission_id: selected.id, p_final_volume_m3: Number(finalVolume), p_issue_report: report.trim() });
+          if (error) throw error;
+          await stopMissionLocation();
+          Alert.alert('ماموریت ثبت شد', data?.[0]?.completion_message || 'ماموریت با موفقیت تکمیل شد.');
+          setFinalVolume(''); setReport(''); setChecklist(null); setSelected(null); await loadMissions();
+        } catch (e: any) { Alert.alert('خطا', e.message || 'اتمام مأموریت انجام نشد.'); }
+        finally { setLoading(false); }
+      }}
+      finalVolume={finalVolume} setFinalVolume={setFinalVolume}
+      report={report} setReport={setReport}
+      checklist={checklist}
+      pickChecklist={async () => {
+        const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
+        if (!result.canceled) setChecklist(result.assets[0]);
+      }}
+      loading={loading}
+    />;
+  }
