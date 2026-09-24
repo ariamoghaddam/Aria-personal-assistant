@@ -1,0 +1,90 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Linking,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  View
+} from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { supabase } from './src/lib/supabase';
+import { registerNativePush } from './src/notifications';
+import { startMissionLocation, stopMissionLocation } from './src/background/locationTask';
+
+type Tab = 'home' | 'missions' | 'calendar' | 'finance' | 'alerts';
+type Mission = {
+  id: string;
+  project_date: string;
+  scheduled_time: string;
+  concrete_volume_m3: number;
+  final_volume_m3?: number | null;
+  service: string;
+  relationship: string;
+  status: string;
+  departed_at?: string | null;
+  arrived_at?: string | null;
+  finished_at?: string | null;
+  tracking_active: boolean;
+  project?: { id: string; name: string; address: string; lat: number | null; lng: number | null; geofence_radius_m: number };
+};
+
+const COLORS = {
+  navy: '#0B3045', royal: '#244D8F', teal: '#00A98F', teal2: '#0BC3A7',
+  bg: '#E4ECEF', card: '#F7FAFB', text: '#17323A', muted: '#526A73',
+  line: '#C8D5DA', amber: '#F0AA35', red: '#DF5B68', purple: '#735BD7'
+};
+
+const faDate = (v?: string) => v ? new Date(v + 'T12:00:00').toLocaleDateString('fa-IR-u-ca-persian') : '—';
+const faTime = (v?: string | null) => v ? new Date(v).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }) : '—';
+const clock = (v?: string) => v ? v.slice(0, 5) : '—';
+const num = (v: number | string) => new Intl.NumberFormat('fa-IR').format(Number(v || 0));
+
+export default function App() {
+  const [sessionReady, setSessionReady] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [fullName, setFullName] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [tab, setTab] = useState<Tab>('home');
+  const [missions, setMissions] = useState<Mission[]>([]);
+  const [selected, setSelected] = useState<Mission | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [finalVolume, setFinalVolume] = useState('');
+  const [report, setReport] = useState('');
+  const [checklist, setChecklist] = useState<ImagePicker.ImagePickerAsset | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (data.session) await hydrateUser(data.session.user.id);
+      setSessionReady(true);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) await hydrateUser(session.user.id);
+      else { setUserId(null); setFullName(''); setMissions([]); }
+    });
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  async function hydrateUser(id: string) {
+    const { data, error } = await supabase.from('df_profiles').select('full_name,role,active').eq('user_id', id).single();
+    if (error || !data || !data.active || data.role !== 'technician') {
+      await supabase.auth.signOut();
+      Alert.alert('ورود غیرمجاز', 'این حساب برای اپ کارشناس پروژه فعال نیست.');
+      return;
+    }
+    setUserId(id); setFullName(data.full_name || 'کارشناس پروژه');
+    await loadMissions();
+  }
+
+  async function login() {
+    if (!username.trim() || !password) return Alert.alert('ورود', 'نام کاربری و رمز عبور را وارد کنید.');
+    setLoading(true);
+    const email = `${username.trim().toLowerCase()}@mana.daris.local`;
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
