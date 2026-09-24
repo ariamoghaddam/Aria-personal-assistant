@@ -1,0 +1,85 @@
+name: Build Mana iOS Native
+
+on:
+  push:
+    branches: [mana-native-build]
+    paths:
+      - 'mana-native/**'
+      - '.github/workflows/mana-ios-build.yml'
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: mana-native
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Rebuild App.tsx
+        run: cat App.part1 App.part2 App.part3 App.part4 > App.tsx
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Expo native modules
+        run: npx expo install expo-constants expo-device expo-image-picker expo-location expo-notifications expo-task-manager @react-native-async-storage/async-storage react-native-safe-area-context
+
+      - name: Normalize Expo dependency versions
+        run: npx expo install --fix
+
+      - name: Prebuild iOS
+        env:
+          CI: '1'
+        run: npx expo prebuild --platform ios --no-install
+
+      - name: Install CocoaPods
+        run: |
+          cd ios
+          pod install --repo-update
+
+      - name: Discover workspace and scheme
+        id: discover
+        run: |
+          WORKSPACE=$(find ios -maxdepth 1 -name "*.xcworkspace" | head -n 1)
+          echo "workspace=$WORKSPACE" >> "$GITHUB_OUTPUT"
+          SCHEME=$(xcodebuild -workspace "$WORKSPACE" -list -json | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d["workspace"]["schemes"][0])')
+          echo "scheme=$SCHEME" >> "$GITHUB_OUTPUT"
+          echo "Workspace: $WORKSPACE"
+          echo "Scheme: $SCHEME"
+
+      - name: Build iOS Simulator app
+        run: |
+          rm -rf build-ios
+          xcodebuild \
+            -workspace "${{ steps.discover.outputs.workspace }}" \
+            -scheme "${{ steps.discover.outputs.scheme }}" \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build-ios \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Prepare iOS artifact
+        run: |
+          APP=$(find build-ios/Build/Products -type d -name "*.app" | head -n 1)
+          test -n "$APP"
+          ditto -c -k --sequesterRsrc --keepParent "$APP" Mana-iOS-Simulator.zip
+          ls -lh Mana-iOS-Simulator.zip
+
+      - name: Upload iOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mana-iOS-Simulator
+          path: mana-native/Mana-iOS-Simulator.zip
+          if-no-files-found: error
+          retention-days: 7
