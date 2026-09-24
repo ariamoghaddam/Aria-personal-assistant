@@ -71,7 +71,8 @@ jobs:
 
       - name: Prepare iOS artifact
         run: |
-          APP=$(find build-ios/Build/Products -type d -name "*.app" | head -n 1)
+          APP=$(find build-ios/Build/Products -name "*.app" -print -quit)
+          echo "Found app: $APP"
           test -n "$APP"
           ditto -c -k --sequesterRsrc --keepParent "$APP" Mana-iOS-Simulator.zip
           ls -lh Mana-iOS-Simulator.zip
