@@ -30,9 +30,6 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Rebuild App.tsx
         run: cat App.part1 App.part2 App.part3 App.part4 > App.tsx
 
