@@ -51,7 +51,7 @@ jobs:
         run: |
           WORKSPACE=$(find ios -maxdepth 1 -name "*.xcworkspace" | head -n 1)
           echo "workspace=$WORKSPACE" >> "$GITHUB_OUTPUT"
-          SCHEME=$(xcodebuild -workspace "$WORKSPACE" -list -json | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d["workspace"]["schemes"][0])')
+          SCHEME=$(xcodebuild -workspace "$WORKSPACE" -list -json | python3 -c 'import sys,json; d=json.load(sys.stdin); s=d["workspace"]["schemes"]; print(next((x for x in s if x.lower()=="mana"), s[-1]))')
           echo "scheme=$SCHEME" >> "$GITHUB_OUTPUT"
           echo "Workspace: $WORKSPACE"
           echo "Scheme: $SCHEME"
