@@ -1,0 +1,30 @@
+  return (
+    <SafeAreaView style={styles.safe}>
+      <StatusBar barStyle="dark-content" />
+      <View style={styles.topbar}>
+        <View style={styles.logo}><Text style={styles.logoText}>م</Text></View>
+        <View style={{ flex: 1 }}><Text style={styles.brand}>سامانه مانا</Text><Text style={styles.sub}>{fullName} · کارشناس پروژه</Text></View>
+        <Pressable style={styles.logout} onPress={() => supabase.auth.signOut()}><Text style={styles.logoutText}>خروج</Text></Pressable>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.content}>
+        {tab === 'home' && <Home fullName={fullName} nextMission={nextMission} missions={activeMissions} openMission={setSelected} enablePush={async()=>{try{await registerNativePush();Alert.alert('اعلان فعال شد','Push Native روی این گوشی فعال شد.')}catch(e:any){Alert.alert('اعلان',e.message)}}} />}
+        {tab === 'missions' && <MissionList missions={missions} openMission={setSelected} />}
+        {tab === 'calendar' && <CalendarView missions={missions} />}
+        {tab === 'finance' && <FinanceView />}
+        {tab === 'alerts' && <AlertsView />}
+      </ScrollView>
+      <BottomNav tab={tab} setTab={setTab} />
+    </SafeAreaView>
+  );
+}
+
+function Login({ username, password, setUsername, setPassword, onLogin, loading }: any) {
+  return <SafeAreaView style={styles.loginWrap}><View style={styles.loginCard}><View style={styles.brandRow}><View style={styles.logo}><Text style={styles.logoText}>م</Text></View><View><Text style={styles.brand}>سامانه مانا</Text><Text style={styles.sub}>مدیریت هوشمند عملیات و نیروی اجرایی</Text></View></View><View style={styles.hero}><Text style={styles.heroTitle}>ورود کارشناس پروژه</Text><Text style={styles.heroText}>با نام کاربری و رمز عبوری که مدیریت تعریف کرده وارد شوید.</Text></View><Text style={styles.label}>نام کاربری</Text><TextInput value={username} onChangeText={setUsername} autoCapitalize="none" style={styles.input} /><Text style={styles.label}>رمز عبور</Text><TextInput value={password} onChangeText={setPassword} secureTextEntry style={styles.input} /><Pressable style={styles.primary} onPress={onLogin} disabled={loading}><Text style={styles.primaryText}>{loading ? 'در حال ورود...' : 'ورود به مانا'}</Text></Pressable></View></SafeAreaView>;
+}
+
+function Home({ fullName, nextMission, missions, openMission, enablePush }: any) {
+  return <><View style={styles.hero}><Text style={styles.heroTitle}>سلام {fullName} 👋</Text><Text style={styles.heroText}>برنامه امروز، مأموریت بعدی و اعلان‌های مهمت همین‌جا آماده است.</Text></View><View style={styles.smartRow}><View style={[styles.smart, styles.smartGreen]}><Text style={styles.smartTitle}>ماموریت بعدی</Text><Text style={styles.smartText}>{nextMission ? `${nextMission.project?.name} · ${faDate(nextMission.project_date)}` : 'ماموریت فعالی نداری'}</Text><Text style={styles.smartText}>{nextMission ? `ساعت ${clock(nextMission.scheduled_time)}` : ''}</Text></View><View style={styles.smart}><Text style={styles.smartTitle}>فعال</Text><Text style={styles.smartText}>{missions.length} مأموریت</Text></View></View><SectionTitle title="ماموریت‌های من" subtitle="اطلاعات واقعی پنل مدیریت" />{missions.length ? missions.map((m: Mission) => <MissionCard key={m.id} mission={m} onPress={() => openMission(m)} />) : <Empty text="ماموریت فعالی ندارید." />}<SectionTitle title="اعلان Native" /><Pressable style={[styles.card, { borderRightColor: COLORS.red, borderRightWidth: 5 }]} onPress={enablePush}><Text style={styles.cardTitle}>🔔 فعال‌سازی اعلان روی این گوشی</Text><Text style={styles.cardText}>ماموریت جدید، تغییر یا لغو مأموریت حتی وقتی برنامه بسته است.</Text></Pressable><View style={styles.card}><Text style={styles.cardTitle}>🔒 حریم خصوصی GPS</Text><Text style={styles.cardText}>موقعیت فقط از «حرکت کردم» تا پایان مأموریت ثبت می‌شود.</Text></View></>;
+}
+
+function MissionList({ missions, openMission }: any) { return <><SectionTitle title="ماموریت‌ها" subtitle="جاری و سوابق قبلی" />{missions.length ? missions.map((m: Mission) => <MissionCard key={m.id} mission={m} onPress={() => openMission(m)} />) : <Empty text="ماموریتی ثبت نشده است." />}</>; }
