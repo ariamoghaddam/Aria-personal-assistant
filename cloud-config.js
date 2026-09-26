@@ -28,7 +28,7 @@ window.ARIA_CLOUD = {
     load('./focus-entry-fix.js?v=1','ariaFocusEntry').catch(e=>console.error('ARIA focus entry failed',e));
     load('./productivity-suite.js?v=1','ariaProductivity').catch(e=>console.error('ARIA productivity load failed',e));
     load('./project-price-book.js?v=38','ariaPriceBook').catch(e=>console.error('ARIA price book load failed',e));
-    await load('./music-suite.js?v=1','ariaMusicPro').catch(e=>console.error('ARIA music pro load failed',e));
+    await load('./music-suite.js?v=40','ariaMusicPro').catch(e=>console.error('ARIA music pro load failed',e));
     load('./music-metronome.js?v=2','ariaMetronome').catch(e=>console.error('ARIA metronome load failed',e));
     load('./handwriting-local.js?v=2','ariaHandLocal').catch(e=>console.error('ARIA handwriting load failed',e));
     try{await load('./ai-input.js?v=27','ariaAiInput');}catch(e){console.error('ARIA ai input load failed',e);}
