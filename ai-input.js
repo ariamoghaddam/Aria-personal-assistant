@@ -51,10 +51,11 @@
     throw new Error('برای استفاده از این قابلیت باید وارد حساب ARIA باشی.');
   }
 
-  function xhrPost(url,body){
+  function xhrPost(url,body,token=''){
     return new Promise((resolve,reject)=>{
       const x=new XMLHttpRequest();
       x.open('POST',url,true);
+      if(token)x.setRequestHeader('Authorization','Bearer '+token);
       x.timeout=90000;
       x.onload=()=>resolve({status:x.status,text:x.responseText||''});
       x.onerror=()=>reject(new Error('ارتباط با سرور برقرار نشد.'));
@@ -65,8 +66,8 @@
 
   async function callAI(mode,body){
     async function once(token){
-      const url=`/api/aria-ai?mode=${encodeURIComponent(mode)}&t=${encodeURIComponent(token)}&v=23`;
-      const r=await xhrPost(url,body);
+      const url=`/api/aria-ai?mode=${encodeURIComponent(mode)}&v=24`;
+      const r=await xhrPost(url,body,token);
       let out={};try{out=r.text?JSON.parse(r.text):{}}catch{out={detail:r.text||'پاسخ نامعتبر از سرور'}}
       return {r,out};
     }
