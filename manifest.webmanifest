@@ -1,8 +1,8 @@
 {
-  "id": "/?aria-app=v37",
+  "id": "/?aria-app=v38",
   "name": "ARIA — دستیار شخصی آریا",
   "short_name": "ARIA",
-  "start_url": "/?aria-app=v37",
+  "start_url": "/?aria-app=v38",
   "scope": "/",
   "display": "standalone",
   "background_color": "#0b1117",
