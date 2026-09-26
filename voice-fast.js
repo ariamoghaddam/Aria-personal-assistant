@@ -109,22 +109,21 @@
     }
     if(active){active.stop?.();active=null;return}
     $('afvPlan').style.display='none';$('afvConfirm').style.display='none';$('afvHeard').textContent='';lastPlan=null;
+    if(!window.ARIA_VOICE_ENGINE){
+      $('afvState').textContent='در حال آماده‌کردن موتور دقیق فارسی…';
+      try{
+        if(!document.querySelector('script[data-aria-voice-fast-engine]')){
+          const s=document.createElement('script');s.src='./voice-engine.js?voicefast='+Date.now();s.dataset.ariaVoiceFastEngine='1';document.head.appendChild(s);
+        }
+        for(let i=0;i<60&&!window.ARIA_VOICE_ENGINE;i++)await new Promise(r=>setTimeout(r,100));
+      }catch(_){}
+    }
     if(window.ARIA_VOICE_ENGINE){
       await startRecorderFallback();
       return;
     }
-    if(canNativeSpeech()){
-      active={native:true};
-      try{
-        const text=await nativeSpeech();
-        $('afvHeard').textContent=norm(text);
-        showPlan(plan(text));
-        $('afvState').textContent='شنیدم. اگر اطلاعات درست است، «اوکی، ثبت کن» را بزن.';
-      }catch(e){$('afvState').textContent=e?.message||'صدا تشخیص داده نشد.'}
-      finally{active=null;$('afvRetry').textContent='🎙 دوباره بگو'}
-      return;
-    }
-    $('afvState').textContent='موتور تشخیص صدا هنوز آماده نشده؛ چند ثانیه دیگر دوباره بزن.';
+    $('afvState').textContent='موتور دقیق فارسی آماده نشد؛ اینترنت را بررسی کن و دوباره بزن.';
+    $('afvRetry').textContent='🎙 دوباره بگو';
   }
   function commit(){
     if(!lastPlan)return;
