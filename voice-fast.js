@@ -1,5 +1,5 @@
 (function(){
-  if(window.__ARIA_VOICE_FAST_V7)return;window.__ARIA_VOICE_FAST_V6=true;
+  if(window.__ARIA_VOICE_FAST_V8)return;window.__ARIA_VOICE_FAST_V8=true;
   const $=id=>document.getElementById(id);
   const norm=s=>String(s||'').trim().replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[\u064B-\u065F]/g,'').replace(/\s+/g,' ');
   const en=s=>String(s||'').replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d));
@@ -96,7 +96,7 @@
   function ensureUI(){
     if(!$('ariaFastVoiceSheet')){
       const d=document.createElement('dialog');d.id='ariaFastVoiceSheet';d.style.cssText='width:min(560px,94vw);border:0;border-radius:22px;background:#fff;color:#14202a;padding:16px;direction:rtl';
-      d.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="font-size:18px">🎙 فرمان صوتی ARIA</b><button id="afvClose" class="ghost">بستن</button></div><div id="afvState" style="margin-top:12px;color:#7a8b96;font-size:13px">مثلاً بگو: «فردا ساعت ۱۲ جلسه با مهندس احمدی» — یک‌بار بزن و صحبت کن، بعد برای پایان دوباره بزن</div><div id="afvHeard" style="margin-top:10px;padding:12px;border:1px solid #b8c6cf;border-radius:14px;min-height:54px;line-height:1.9"></div><div id="afvPlan" style="display:none;margin-top:10px;padding:12px;background:#f1f5f7;border-radius:14px;line-height:2"></div><div style="display:flex;gap:8px;margin-top:12px"><button id="afvRetry" style="flex:1">🎙 بگو</button><button id="afvConfirm" class="primary" style="flex:1;display:none">✓ اوکی، ثبت کن</button></div>';
+      d.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="font-size:18px">🎙 فرمان صوتی دقیق ARIA</b><button id="afvClose" class="ghost">بستن</button></div><div id="afvState" style="margin-top:12px;color:#7a8b96;font-size:13px">مثلاً بگو: «فردا ساعت ۱۲ جلسه با مهندس احمدی» — شروع کن، جمله را کامل بگو و برای پایان دوباره بزن</div><div id="afvHeard" style="margin-top:10px;padding:12px;border:1px solid #b8c6cf;border-radius:14px;min-height:54px;line-height:1.9"></div><div id="afvPlan" style="display:none;margin-top:10px;padding:12px;background:#f1f5f7;border-radius:14px;line-height:2"></div><div style="display:flex;gap:8px;margin-top:12px"><button id="afvRetry" style="flex:1">🎙 بگو</button><button id="afvConfirm" class="primary" style="flex:1;display:none">✓ اوکی، ثبت کن</button></div>';
       document.body.appendChild(d);
       $('afvClose').onclick=()=>{active?.cancel?.();active=null;try{d.close()}catch{d.removeAttribute('open')}};
       $('afvRetry').onclick=start;$('afvConfirm').onclick=commit;
@@ -105,22 +105,46 @@
   async function startRecorderFallback(){
     try{if(!window.ARIA_VOICE_ENGINE)throw new Error('موتور صدا هنوز آماده نشده.');active=await window.ARIA_VOICE_ENGINE.startRecorder({onState:t=>{$('afvState').textContent='🔴 '+t}});$('afvRetry').textContent='⏹ پایان صحبت'}catch(e){active=null;$('afvState').textContent=e?.message||'میکروفون شروع نشد.'}
   }
+  async function ensureVoiceEngine(){
+    if(window.ARIA_VOICE_ENGINE)return true;
+    try{
+      if(!document.querySelector('script[data-aria-voice-fast-engine]')){
+        const s=document.createElement('script');s.src='./voice-engine.js?voicefast='+Date.now();s.dataset.ariaVoiceFastEngine='1';document.head.appendChild(s);
+      }
+      for(let i=0;i<40&&!window.ARIA_VOICE_ENGINE;i++)await new Promise(r=>setTimeout(r,100));
+    }catch(_){}
+    return !!window.ARIA_VOICE_ENGINE;
+  }
+  async function finishRecorder(){
+    $('afvState').textContent='در حال تبدیل دقیق صدای فارسی…';
+    active.stop();$('afvRetry').textContent='⏳ در حال تبدیل…';
+    try{
+      const text=await active.result;
+      $('afvHeard').textContent=norm(text);
+      const p=plan(text);showPlan(p);
+      const missing=[];
+      if((p.type==='meeting'||p.type==='appointment')&&!p.date)missing.push('روز');
+      if((p.type==='meeting'||p.type==='appointment')&&!p.time)missing.push('ساعت');
+      $('afvState').textContent=missing.length?'جمله را شنیدم؛ '+missing.join(' و ')+' مشخص نیست. دوباره واضح بگو یا همین اطلاعات را بررسی کن.':'عالی، فهمیدم. اطلاعات را چک کن و «اوکی، ثبت کن» را بزن.';
+    }catch(e){
+      $('afvState').textContent=(e?.message||'صدا تشخیص داده نشد.')+' دوباره آرام و واضح بگو.';
+    }finally{active=null;$('afvRetry').textContent='🎙 دوباره بگو'}
+  }
   async function start(){
     ensureUI();const d=$('ariaFastVoiceSheet');try{if(!d.open)d.showModal()}catch{d.setAttribute('open','')}
-    if(active&&active.result){
-      $('afvState').textContent='در حال تبدیل دقیق صدای فارسی…';active.stop();$('afvRetry').textContent='🎙 شروع صحبت';
-      try{
-        const text=await active.result;
-        $('afvHeard').textContent=norm(text);
-        showPlan(plan(text));
-        $('afvState').textContent='شنیدم. اگر اطلاعات درست است، «اوکی، ثبت کن» را بزن.';
-      }catch(e){
-        $('afvState').textContent=e?.message||'صدا تشخیص داده نشد.';
-      }finally{active=null;$('afvRetry').textContent='🎙 دوباره بگو'}
-      return;
-    }
+    if(active&&active.result){await finishRecorder();return}
     if(active){active.stop?.();active=null;return}
     $('afvPlan').style.display='none';$('afvConfirm').style.display='none';$('afvHeard').textContent='';lastPlan=null;
+
+    // Accurate path first: record real audio, then transcribe in Persian.
+    const ready=await ensureVoiceEngine();
+    if(ready&&navigator.mediaDevices?.getUserMedia&&window.MediaRecorder){
+      $('afvState').textContent='🎙 آماده‌ام. جمله را طبیعی بگو؛ مثلاً «فردا ساعت ۱۲ جلسه با مهندس احمدی». برای پایان دوباره روی دکمه بزن.';
+      await startRecorderFallback();
+      return;
+    }
+
+    // Browser speech recognition is only a last fallback because Persian accuracy varies a lot.
     if(canNativeSpeech()){
       try{
         $('afvState').textContent='دارم فرمان فارسی را می‌شنوم…';
@@ -130,21 +154,10 @@
         $('afvState').textContent='شنیدم. اطلاعات را چک کن و اگر درست است «اوکی، ثبت کن» را بزن.';
         $('afvRetry').textContent='🎙 دوباره بگو';
         return;
-      }catch(e){
-        $('afvState').textContent=(e?.message||'تشخیص مستقیم صدا انجام نشد.')+' در حال امتحان موتور جایگزین…';
-      }
+      }catch(e){$('afvState').textContent=e?.message||'تشخیص صدا انجام نشد.'}
     }
-    if(!window.ARIA_VOICE_ENGINE){
-      try{
-        if(!document.querySelector('script[data-aria-voice-fast-engine]')){
-          const s=document.createElement('script');s.src='./voice-engine.js?voicefast='+Date.now();s.dataset.ariaVoiceFastEngine='1';document.head.appendChild(s);
-        }
-        for(let i=0;i<30&&!window.ARIA_VOICE_ENGINE;i++)await new Promise(r=>setTimeout(r,100));
-      }catch(_){}
-    }
-    if(window.ARIA_VOICE_ENGINE){await startRecorderFallback();return}
-    $('afvState').textContent='تشخیص صدا آماده نشد؛ دوباره بزن یا جمله را تایپ کن.';
-    $('afvRetry').textContent='🎙 دوباره بگو';
+    $('afvState').textContent='موتور تشخیص صدا روی این دستگاه آماده نشد.';
+    $('afvRetry').textContent='🎙 دوباره امتحان کن';
   }
   function commit(){
     if(!lastPlan)return;
