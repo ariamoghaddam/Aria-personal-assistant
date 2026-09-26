@@ -12,7 +12,8 @@ function readRaw(req){
 export default async function handler(req,res){
   if(req.method!=='POST') return res.status(405).json({error:'method_not_allowed'});
   try{
-    const token=(req.query?.t||'').toString().trim();
+    const auth=(req.headers.authorization||'').toString();
+    const token=(auth.match(/^Bearer\s+(.+)$/i)?.[1]||req.query?.t||'').toString().trim();
     if(!token) return res.status(401).json({error:'unauthorized'});
     const mode=(req.query?.mode||'transcribe').toString();
     const body=await readRaw(req);
