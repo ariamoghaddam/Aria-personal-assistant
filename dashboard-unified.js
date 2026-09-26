@@ -9,9 +9,21 @@
   function kindMeeting(m){return /قرار/.test(String(m.title||''))?'قرار':'جلسه'}
   function itemTask(t){
     const p=projectFor(t.project),pc=p?.color||'#2dd4bf';
-    const time=t.time?'<span class="udsTime">🕒 '+E(t.time)+'</span>':'';
-    const proj=p?'<span class="udsProject" style="--pc:'+pc+'">▰ '+E(p.name)+'</span>':'';
-    return '<button class="udsItem udsTask" type="button" onclick="openTaskById(\''+String(t.id).replace(/'/g,'')+'\')"><span class="udsRail" style="background:'+pc+'"></span><span class="udsMain"><span class="udsTop"><b>'+E(t.title||'بدون عنوان')+'</b><span class="udsType task">کار</span></span><span class="udsMeta">'+time+proj+'</span></span></button>';
+    const status={todo:'انجام نشده',partial:'نیمه‌انجام',postponed:'تعویق',done:'انجام شده'}[t.status]||'انجام نشده';
+    const priority={urgent:'فوری',important:'مهم',normal:'عادی'}[t.priority]||'عادی';
+    const repeat=t.repeat&&t.repeat!=='none'?({daily:'روزانه',weekly:'هفتگی',monthly:'ماهانه'}[t.repeat]||t.repeat):'';
+    const overdue=t.status!=='done'&&t.date&&t.date<todayISO2();
+    const date=t.date?'<span class="udsInfo">📅 '+E(typeof iso2j==='function'?iso2j(t.date):t.date)+'</span>':'';
+    const time=t.time?'<span class="udsInfo">🕒 '+E(t.time)+'</span>':'';
+    const proj=p?'<span class="udsInfo" style="--pc:'+pc+'">▰ '+E(p.name)+'</span>':'';
+    const info='<span class="udsInfo udsStatus '+E(t.status||'todo')+'">'+E(status)+'</span><span class="udsInfo udsPriority '+E(t.priority||'normal')+'">'+E(priority)+'</span>'+date+time+proj+(repeat?'<span class="udsInfo">↻ '+E(repeat)+'</span>':'')+(overdue?'<span class="udsInfo udsLate">عقب‌افتاده</span>':'');
+    const id=String(t.id).replace(/'/g,'');
+    const actions='<span class="udsActions" onclick="event.stopPropagation()">'+
+      (t.status!=='partial'?'<button type="button" onclick="setStatus(\''+id+'\',\'partial\')">نیمه‌انجام</button>':'')+
+      '<button type="button" onclick="smartPostpone(\''+id+'\')">تعویق</button>'+
+      (t.status!=='done'?'<button class="udsDone" type="button" onclick="toggleDone(\''+id+'\')">✓ انجام شد</button>':'')+
+      '</span>';
+    return '<div class="udsItem udsTask" role="button" tabindex="0" onclick="openTaskById(\''+id+'\')"><span class="udsRail" style="background:'+pc+'"></span><span class="udsMain"><span class="udsTop"><b>'+E(t.title||'بدون عنوان')+'</b><span class="udsType task">کار</span></span><span class="udsMeta">'+info+'</span>'+actions+'</span></div>';
   }
   function itemMeeting(m){
     const isAp=kindMeeting(m)==='قرار', c=isAp?'#9b7cff':'#ff9f43', ic=isAp?'◉':'◫', label=isAp?'قرار':'جلسه';
@@ -54,8 +66,11 @@
       .udsChip.work{color:#67ead7;background:#2dd4bf12;border-color:#2dd4bf35}.udsChip.meeting{color:#ffc16b;background:#ff9f4312;border-color:#ff9f4338}.udsChip.appointment{color:#bba8ff;background:#9b7cff12;border-color:#9b7cff38}
       .udsList{position:relative;display:grid;gap:9px;margin-top:12px}.udsItem{position:relative;width:100%;display:flex;align-items:stretch;text-align:right;padding:0;overflow:hidden;border:1px solid rgba(255,255,255,.07);background:linear-gradient(145deg,rgba(25,39,51,.98),rgba(13,24,33,.98));border-radius:17px;color:var(--text);box-shadow:0 9px 24px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.025);transition:.16s ease}
       .udsItem:hover{border-color:rgba(255,255,255,.13);transform:translateY(-1px)}.udsItem:active{transform:scale(.992)}.udsRail{width:5px;flex:0 0 5px}.udsMain{display:grid;gap:8px;padding:13px 14px;width:100%}.udsTop{display:flex;align-items:center;justify-content:space-between;gap:10px}.udsTop b{font-size:14px}.udsType{font-size:10px;font-weight:900;border-radius:999px;padding:4px 8px;border:1px solid transparent;white-space:nowrap}.udsType.task{background:#2dd4bf18;color:#5fe8d5;border-color:#2dd4bf44}.udsMeta{display:flex;gap:7px;flex-wrap:wrap}.udsTime,.udsProject{font-size:10px;color:#a9bac4;padding:4px 7px;border-radius:999px;background:#0b151e;border:1px solid #243743}.udsProject[style]{border-color:color-mix(in srgb,var(--pc) 45%,#243743)}
+      .udsInfo{font-size:10px;color:#b9c8d0;padding:5px 8px;border-radius:999px;background:#0b151e;border:1px solid #243743;white-space:nowrap}.udsStatus.partial{color:#ffd166;border-color:#ffd16655}.udsStatus.postponed{color:#ffad66;border-color:#ff9f4355}.udsStatus.done{color:#62e6b5;border-color:#2dd4bf55}.udsPriority.urgent,.udsLate{color:#ff8c8c;border-color:#ff6b6b55}.udsPriority.important{color:#ffd166;border-color:#ffd16655}
+      .udsActions{display:flex;gap:7px;flex-wrap:wrap;padding-top:2px}.udsActions button{font-family:inherit;font-size:10px;font-weight:850;color:#dce9ef;background:#132532;border:1px solid #2c4352;border-radius:10px;padding:7px 10px;min-height:32px}.udsActions .udsDone{color:#65ead6;border-color:#2dd4bf66;background:#2dd4bf12}
       .udsEmpty{display:grid;place-items:center;gap:5px;padding:24px 10px;border:1px dashed rgba(255,255,255,.09);border-radius:16px;background:rgba(255,255,255,.018);color:var(--muted)}.udsEmpty span{font-size:24px;color:#59d9f3}.udsEmpty b{color:#dbe7ed;font-size:12px}.udsEmpty small{font-size:10px}
-      @media(max-width:600px){.udsSection{padding:13px}.udsHeadTitle b{font-size:15px}.udsDayIcon{width:36px;height:36px}.udsSummary{gap:5px}.udsChip{font-size:9px}}
+      @media(max-width:600px){.udsSection{padding:12px}.udsHeadTitle b{font-size:15px}.udsDayIcon{width:36px;height:36px}.udsSummary{gap:5px}.udsChip{font-size:9px}.udsMain{padding:11px 10px;gap:7px}.udsTop{align-items:flex-start}.udsTop b{font-size:13px;line-height:1.6}.udsMeta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.udsInfo{font-size:9px;padding:5px 6px;overflow:hidden;text-overflow:ellipsis}.udsActions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.udsActions button{font-size:9px;padding:6px 3px;min-height:34px}.udsType{font-size:9px;padding:4px 6px}}
+      @media(min-width:601px){.udsActions{justify-content:flex-start}.udsActions button{min-width:92px}}
     `;document.head.appendChild(s)
   }
   function hideLegacyToday(){
