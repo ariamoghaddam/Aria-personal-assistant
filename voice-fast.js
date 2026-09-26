@@ -6,7 +6,7 @@
   const today=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10)};
   const addDays=(iso,n)=>{const d=new Date((iso||today())+'T12:00:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)};
   const uid=()=>crypto?.randomUUID?.()||Math.random().toString(36).slice(2)+Date.now().toString(36);
-  const nums={صفر:0,یک:1,یه:1,دو:2,سه:3,چهار:4,پنج:5,شش:6,شیش:6,هفت:7,هشت:8,نه:9,ده:10,یازده:11,دوازده:12,سیزده:13,چهارده:14,پانزده:15,شانزده:16,هفده:17,هجده:18,نوزده:19,بیست:20};
+  const nums={صفر:0,یک:1,یه:1,دو:2,سه:3,چهار:4,پنج:5,شش:6,شیش:6,هفت:7,هشت:8,نه:9,ده:10,یازده:11,دوازده:12,سیزده:13,چهارده:14,پانزده:15,شانزده:16,هفده:17,هجده:18,نوزده:19,بیست:20,بیست‌ویک:21,بیست‌ودو:22,بیست‌وسه:23};
   const wdays={شنبه:6,یکشنبه:0,دوشنبه:1,سه‌شنبه:2,سهشنبه:2,چهارشنبه:3,پنجشنبه:4,جمعه:5};
   let active=null,lastPlan=null;
 
@@ -23,7 +23,15 @@
     if(/ظهر/.test(around)&&h<7)h+=12;
     return String(h).padStart(2,'0')+':'+String(min).padStart(2,'0');
   }
-  function parseDate(q){const s=norm(q);if(/پس\s*فردا/.test(s))return addDays(today(),2);if(/فردا/.test(s))return addDays(today(),1);if(/امروز/.test(s))return today();for(const [w,target] of Object.entries(wdays)){if(s.includes(w)){const d=new Date();let gap=(target-d.getDay()+7)%7;if(!gap)gap=7;return addDays(today(),gap)}}return''}
+  function parseDate(q){
+    const s=norm(q);
+    if(/پس\s*فردا/.test(s))return addDays(today(),2);
+    if(/فردا/.test(s))return addDays(today(),1);
+    if(/امروز/.test(s))return today();
+    if(/هفته\s*(?:ی)?\s*بعد/.test(s)){const d=new Date();const gap=((6-d.getDay()+7)%7)||7;return addDays(today(),gap+7)}
+    for(const [w,target] of Object.entries(wdays)){if(s.includes(w)){const d=new Date();let gap=(target-d.getDay()+7)%7;if(!gap)gap=7;if(/هفته\s*بعد/.test(s))gap+=7;return addDays(today(),gap)}}
+    return''
+  }
   function projectFor(q){try{const list=Array.isArray(db?.projects)?db.projects:[];const n=norm(q);let hit=null,best=0;for(const p of list){const name=norm(p.name);if(name&&n.includes(name)&&name.length>best){hit=p;best=name.length}}return hit}catch{return null}}
   function parsePeople(text){const m=norm(text).match(/(?:با|همراه)\s+(.+?)(?=\s+(?:در|تو|برای|پروژه|ساعت|امروز|فردا|پس\s*فردا)|$)/);return m?m[1].trim():''}
   function cleanTitle(q){
@@ -43,16 +51,17 @@
     const priority=/فوری|ضروری|خیلی مهم/.test(text)?'urgent':/مهم/.test(text)?'important':'normal';
     const area=/شخصی/.test(text)?'personal':/شرکت|کاری|کارهای روزمره|پیگیری|تماس/.test(text)?'work':'general';
     const looksMeeting=/(?:جلسه|جلصه|جسله|جلسه‌ای|می팅)/.test(text)||(/مهندس/.test(text)&&!!date&&!!time&&/(?:با|همراه)/.test(text));
-    const type=looksMeeting?'meeting':/قرار/.test(text)?'appointment':'task';
+    const type=looksMeeting?'meeting':/قرار/.test(text)?'appointment':/(?:یادآوری|یادم\s*(?:بنداز|بینداز)|ریمایندر)/.test(text)?'reminder':'task';
     const people=parsePeople(text);let title=cleanTitle(text)||text;
     if(type==='meeting')title='جلسه'+(people?' با '+people:'');
     if(type==='appointment'&&!/قرار/.test(title))title='قرار'+(people?' با '+people:'');
+    if(type==='reminder')title=title.replace(/^(?:یادآوری|ریمایندر)\s*/,'').trim()||'یادآوری';
     return{type,title,people,project:project?.id||'general',projectName:project?.name||'بدون پروژه',area,date,time,repeat,priority,spoken:text};
   }
   function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
   function showPlan(p){
     lastPlan=p;$('afvPlan').style.display='block';
-    const kind=p.type==='meeting'?'🟠 جلسه':p.type==='appointment'?'🟣 قرار':'🟢 کار';
+    const kind=p.type==='meeting'?'🟠 جلسه':p.type==='appointment'?'🟣 قرار':p.type==='reminder'?'🔵 یادآوری':'🟢 کار';
     $('afvPlan').innerHTML=`<b>${escapeHtml(p.title)}</b><br>${kind}<br>📁 ${escapeHtml(p.projectName)}${p.people?`<br>👤 ${escapeHtml(p.people)}`:''}${p.date?`<br>📅 ${p.date}`:''}${p.time?`<br>⏰ ${p.time}`:''}${p.repeat==='daily'?'<br>🔁 هر روز':''}`;
     $('afvConfirm').style.display='inline-block';$('afvState').textContent='اگر درست است، «اوکی، ثبت کن» را بزن؛ اگر اطلاعات درست است ثبتش کن؛ اگر نه دوباره بگو.';
   }
@@ -123,9 +132,9 @@
       $('afvHeard').textContent=norm(text);
       const p=plan(text);showPlan(p);
       const missing=[];
-      if((p.type==='meeting'||p.type==='appointment')&&!p.date)missing.push('روز');
-      if((p.type==='meeting'||p.type==='appointment')&&!p.time)missing.push('ساعت');
-      $('afvState').textContent=missing.length?'جمله را شنیدم؛ '+missing.join(' و ')+' مشخص نیست. دوباره واضح بگو یا همین اطلاعات را بررسی کن.':'عالی، فهمیدم. اطلاعات را چک کن و «اوکی، ثبت کن» را بزن.';
+      if((p.type==='meeting'||p.type==='appointment'||p.type==='reminder')&&!p.date)missing.push('روز');
+      if((p.type==='meeting'||p.type==='appointment'||p.type==='reminder')&&!p.time)missing.push('ساعت');
+      if(missing.length){$('afvConfirm').style.display='none';$('afvState').textContent=missing.length===1?(missing[0]==='ساعت'?'ساعت چند؟':'چه روزی؟'):('روز و ساعت مشخص نیست؛ چه روزی و ساعت چند؟')}else $('afvState').textContent='عالی، فهمیدم. اطلاعات را چک کن و «اوکی، ثبت کن» را بزن.';
     }catch(e){
       $('afvState').textContent=(e?.message||'صدا تشخیص داده نشد.')+' دوباره آرام و واضح بگو.';
     }finally{active=null;$('afvRetry').textContent='🎙 دوباره بگو'}
@@ -168,10 +177,11 @@
         db.meetings.push({id:uid(),title:lastPlan.title,date:lastPlan.date||today(),time:lastPlan.time,location:'',people:lastPlan.people||'',notes:lastPlan.type==='appointment'?'قرار ثبت‌شده با صدا':'جلسه ثبت‌شده با صدا',actions:[],createdAt:new Date().toISOString()});
       }else{
         db.tasks=db.tasks||[];
-        db.tasks.push({id:uid(),title:lastPlan.title,project:lastPlan.project,area:lastPlan.area,description:'',date:lastPlan.date,time:lastPlan.time,priority:lastPlan.priority,status:'todo',repeat:lastPlan.repeat,subtasks:[],attachments:[],drawing:null,createdAt:Date.now(),meta:{voiceCreated:true,voiceSource:lastPlan.spoken}});
+        db.tasks.push({id:uid(),title:lastPlan.title,project:lastPlan.project,area:lastPlan.area,description:lastPlan.type==='reminder'?'یادآوری ثبت‌شده با صدا':'',date:lastPlan.date,time:lastPlan.time,priority:lastPlan.priority,status:'todo',repeat:lastPlan.repeat,subtasks:[],attachments:[],drawing:null,createdAt:Date.now(),meta:{voiceCreated:true,voiceSource:lastPlan.spoken,voiceType:lastPlan.type}});
+      
       }
       if(typeof save==='function')save();else localStorage.setItem('ARIA_ASSISTANT_PRO_V2',JSON.stringify(db));
-      $('afvState').textContent='✓ '+(lastPlan.type==='meeting'?'جلسه':lastPlan.type==='appointment'?'قرار':'کار')+' ثبت شد';$('afvConfirm').style.display='none';
+      $('afvState').textContent='✓ '+(lastPlan.type==='meeting'?'جلسه':lastPlan.type==='appointment'?'قرار':lastPlan.type==='reminder'?'یادآوری':'کار')+' ثبت شد';$('afvConfirm').style.display='none';
       setTimeout(()=>{try{$('ariaFastVoiceSheet').close()}catch(_){};try{if(typeof render==='function')render()}catch(_){}},500);
     }catch(e){$('afvState').textContent=e?.message||'ثبت انجام نشد.'}
   }
