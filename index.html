@@ -305,6 +305,12 @@ function dashboard(){
 }
 function renderTasksSection(title){
  let a=taskFilter();
+ if(view==='inbox'&&window.ARIA_TASK_BOARD){
+  const td=todayISO(),mode=window.ARIA_TASK_BOARD;
+  if(mode==='late'){title='عقب‌افتاده‌ها';a=db.tasks.filter(t=>t.status!=='done'&&t.date&&t.date<td)}
+  else if(mode==='next'){title='کارهای بعدی';a=db.tasks.filter(t=>t.status!=='done'&&t.date&&t.date>td).sort((x,y)=>x.date.localeCompare(y.date))}
+  else if(mode==='inbox'){title='بدون تاریخ / Inbox';a=db.tasks.filter(t=>t.status!=='done'&&!t.date)}
+ }
  return `<section class="card section"><div class="sectionHead"><b>${title}</b><span class="sub">${a.length} مورد</span></div>
  <div class="taskList">${a.length?a.map(renderTask).join(''):'<div class="empty">چیزی اینجا نیست.</div>'}</div></section>`
 }
