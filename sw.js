@@ -1,4 +1,4 @@
-const CACHE='aria-cloud-v27';
+const CACHE='aria-cloud-v36';
 self.addEventListener('install',e=>{self.skipWaiting();});
 self.addEventListener('activate',e=>{e.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.map(k=>caches.delete(k)))),self.clients.claim()]));});
 self.addEventListener('push',event=>{
