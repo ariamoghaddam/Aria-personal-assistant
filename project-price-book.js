@@ -22,5 +22,5 @@
   function remove(){const id=$('apbId').value;if(!id)return;if(!confirm('این پروژه از دفتر قیمت حذف شود؟'))return;write(read().filter(x=>x.id!==id));loadItem(null);render()}
   function open(){build();render();loadItem(null);const d=$('ariaPriceBookDialog');try{d.showModal()}catch{d.setAttribute('open','');d.style.position='fixed';d.style.inset='5vh 2.5vw';d.style.zIndex='9999'}}
   function addButton(){if($('ariaPriceBookBtn'))return;const top=document.querySelector('header .top>div:last-child')||document.querySelector('header .top');if(!top)return;const b=document.createElement('button');b.id='ariaPriceBookBtn';b.className='ghost';b.type='button';b.textContent='💰 قیمت پروژه‌ها';b.onclick=open;top.prepend(b)}
-  build();addButton();new MutationObserver(addButton).observe(document.documentElement,{childList:true,subtree:true});window.ARIA_PRICE_BOOK_OPEN=open;
+  build();addButton();window.addEventListener('pageshow',addButton);setTimeout(addButton,800);window.ARIA_PRICE_BOOK_OPEN=open;
 })();
