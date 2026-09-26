@@ -7,7 +7,7 @@ window.ARIA_CLOUD = {
 };
 
 (async()=>{
-  const marker='ARIA_CACHE_REFRESH_PERSIAN_VOICE_V33';
+  const marker='ARIA_CACHE_REFRESH_PERSIAN_VOICE_V34';
   try{if(!localStorage.getItem(marker)){localStorage.setItem(marker,'1');if(window.caches){const keys=await caches.keys();await Promise.all(keys.map(k=>caches.delete(k).catch(()=>false)));}}}catch(e){console.warn('ARIA refresh',e)}
   const load=(src,key)=>new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.defer=true;if(key)s.dataset[key]='1';s.onload=resolve;s.onerror=reject;document.head.appendChild(s);});
   const fresh=src=>src+(src.includes('?')?'&':'?')+'fresh='+Date.now();
@@ -33,7 +33,7 @@ window.ARIA_CLOUD = {
     load('./handwriting-local.js?v=2','ariaHandLocal').catch(e=>console.error('ARIA handwriting load failed',e));
     try{await load('./ai-input.js?v=27','ariaAiInput');}catch(e){console.error('ARIA ai input load failed',e);}
     await load('./voice-engine.js?v=9','ariaVoiceEngine').catch(e=>console.error('ARIA voice engine load failed',e));
-    load(fresh('./voice-fast.js?v=4'),'ariaFastVoice').catch(e=>console.error('ARIA fast voice load failed',e));
+    load(fresh('./voice-fast.js?v=5'),'ariaFastVoice').catch(e=>console.error('ARIA fast voice load failed',e));
     load(fresh('./voice-conversation.js'),'ariaVoiceConversation').catch(e=>console.error('ARIA spoken conversation load failed',e));
   },250));
 })();
