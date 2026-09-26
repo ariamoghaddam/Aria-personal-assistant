@@ -17,7 +17,7 @@ window.ARIA_CLOUD = {
     load('./settings-ui.js?v=2','ariaSettings').catch(e=>console.error('ARIA settings load failed',e));
     await load('./ai-fetch-guard.js?v=1','ariaAiFetchGuard').catch(e=>console.error('ARIA AI timeout guard load failed',e));
     load('./aria-brain.js?v=9','ariaBrain').catch(e=>console.error('ARIA brain load failed',e));
-    load('./notification-center.js?v=6','ariaNotifications').catch(e=>console.error('ARIA notification load failed',e));
+    load('./notification-center.js?v=7','ariaNotifications').catch(e=>console.error('ARIA notification load failed',e));
     load('./routine-manager.js?v=1','ariaRoutines').catch(e=>console.error('ARIA routine manager load failed',e));
     load('./mental-rest.js?v=2','ariaMentalRest').catch(e=>console.error('ARIA mental rest load failed',e));
     load('./ui-hub.js?v=5','ariaUiHub').catch(e=>console.error('ARIA command center load failed',e));
