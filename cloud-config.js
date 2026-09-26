@@ -7,7 +7,7 @@ window.ARIA_CLOUD = {
 };
 
 (async()=>{
-  const marker='ARIA_CACHE_REFRESH_PERSIAN_VOICE_V34';
+  const marker='ARIA_CACHE_REFRESH_RESPONSIVE_TASKS_V35';
   try{if(!localStorage.getItem(marker)){localStorage.setItem(marker,'1');if(window.caches){const keys=await caches.keys();await Promise.all(keys.map(k=>caches.delete(k).catch(()=>false)));}}}catch(e){console.warn('ARIA refresh',e)}
   const load=(src,key)=>new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.defer=true;if(key)s.dataset[key]='1';s.onload=resolve;s.onerror=reject;document.head.appendChild(s);});
   const fresh=src=>src+(src.includes('?')?'&':'?')+'fresh='+Date.now();
@@ -21,7 +21,7 @@ window.ARIA_CLOUD = {
     load('./routine-manager.js?v=1','ariaRoutines').catch(e=>console.error('ARIA routine manager load failed',e));
     load('./mental-rest.js?v=2','ariaMentalRest').catch(e=>console.error('ARIA mental rest load failed',e));
     load('./ui-hub.js?v=5','ariaUiHub').catch(e=>console.error('ARIA command center load failed',e));
-    load('./dashboard-unified.js?v=4','ariaUnifiedDash').catch(e=>console.error('ARIA unified dashboard load failed',e));
+    load('./dashboard-unified.js?v=5','ariaUnifiedDash').catch(e=>console.error('ARIA unified dashboard load failed',e));
     load('./delete-fix.js?v=1','ariaDeleteFix').catch(e=>console.error('ARIA delete fix load failed',e));
     await load('./focus-center.js?v=entry5','ariaFocus').catch(e=>console.error('ARIA focus load failed',e));
     load('./focus-distraction-enhance.js?v=entry4','ariaFocusDistraction').catch(e=>console.error('ARIA focus distraction load failed',e));
