@@ -1,5 +1,5 @@
 (function(){
-  if(window.__ARIA_VOICE_FAST_V6)return;window.__ARIA_VOICE_FAST_V6=true;
+  if(window.__ARIA_VOICE_FAST_V7)return;window.__ARIA_VOICE_FAST_V6=true;
   const $=id=>document.getElementById(id);
   const norm=s=>String(s||'').trim().replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[\u064B-\u065F]/g,'').replace(/\s+/g,' ');
   const en=s=>String(s||'').replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d));
@@ -61,22 +61,34 @@
     const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
     if(!SR)return Promise.reject(new Error('تشخیص گفتار فارسی روی این مرورگر در دسترس نیست.'));
     return new Promise((resolve,reject)=>{
-      const rec=new SR();let finalText='',done=false;
-      rec.lang='fa-IR';rec.continuous=false;rec.interimResults=true;rec.maxAlternatives=5;
+      const rec=new SR();let finalText='',liveText='',done=false;
+      rec.lang='fa-IR';rec.continuous=false;rec.interimResults=true;rec.maxAlternatives=8;
       const finish=(fn,v)=>{if(done)return;done=true;try{rec.stop()}catch(_){};fn(v)};
-      rec.onstart=()=>{$('afvState').textContent='🔴 دارم گوش می‌دم… جمله را طبیعی بگو؛ بعد کمی مکث کن.';$('afvRetry').textContent='🎙 در حال شنیدن…'};
+      const scoreCandidate=t=>{
+        const s=norm(t);let sc=0;
+        if(/فردا|امروز|پس\s*فردا|شنبه|یکشنبه|دوشنبه|سه.?شنبه|چهارشنبه|پنجشنبه|جمعه/.test(s))sc+=6;
+        if(/ساعت/.test(s))sc+=6;
+        if(/جلسه|جلصه|جسله|قرار/.test(s))sc+=8;
+        if(/مهندس|دکتر|آقای|خانم|با\s/.test(s))sc+=4;
+        if(/ثبت کن|بساز|بذار|بگذار|یادم بنداز/.test(s))sc+=3;
+        if(/[۰-۹0-9]|دوازده|یازده|ده|نه|هشت|هفت|شش|پنج|چهار|سه|دو|یک/.test(s))sc+=3;
+        sc+=Math.min(s.length/40,2);
+        return sc;
+      };
+      rec.onstart=()=>{$('afvState').textContent='🔴 دارم گوش می‌دم… مثلاً بگو: «فردا ساعت ۱۲ جلسه با مهندس احمدی»';$('afvRetry').textContent='🎙 در حال شنیدن…'};
       rec.onresult=e=>{
-        let best='';
         for(let i=e.resultIndex;i<e.results.length;i++){
-          const res=e.results[i];
-          let cand='';
-          for(let j=0;j<res.length;j++){const t=norm(res[j].transcript);if(t.length>cand.length)cand=t}
-          if(res.isFinal)finalText+=(finalText?' ':'')+cand;else best=cand;
+          const res=e.results[i];let best='',bestScore=-1;
+          for(let j=0;j<res.length;j++){
+            const t=norm(res[j].transcript),sc=scoreCandidate(t);
+            if(sc>bestScore){best=t;bestScore=sc}
+          }
+          if(res.isFinal)finalText+=(finalText?' ':'')+best;else liveText=best;
         }
-        $('afvHeard').textContent=norm(finalText||best);
+        $('afvHeard').textContent=norm(finalText||liveText);
       };
       rec.onerror=e=>finish(reject,new Error(e?.error==='not-allowed'?'اجازه میکروفون بسته است.':e?.error==='no-speech'?'صدایی شنیده نشد؛ دوباره بگو.':'تشخیص صدا انجام نشد؛ دوباره امتحان کن.'));
-      rec.onend=()=>{const t=norm(finalText||$('afvHeard').textContent);if(t)finish(resolve,t);else finish(reject,new Error('چیزی از صدات متوجه نشدم؛ دوباره بگو.'))};
+      rec.onend=()=>{const t=norm(finalText||liveText||$('afvHeard').textContent);if(t)finish(resolve,t);else finish(reject,new Error('چیزی از صدات متوجه نشدم؛ دوباره بگو.'))};
       try{rec.start()}catch(e){reject(e)}
     });
   }
@@ -109,20 +121,29 @@
     }
     if(active){active.stop?.();active=null;return}
     $('afvPlan').style.display='none';$('afvConfirm').style.display='none';$('afvHeard').textContent='';lastPlan=null;
+    if(canNativeSpeech()){
+      try{
+        $('afvState').textContent='دارم فرمان فارسی را می‌شنوم…';
+        const text=await nativeSpeech();
+        $('afvHeard').textContent=norm(text);
+        showPlan(plan(text));
+        $('afvState').textContent='شنیدم. اطلاعات را چک کن و اگر درست است «اوکی، ثبت کن» را بزن.';
+        $('afvRetry').textContent='🎙 دوباره بگو';
+        return;
+      }catch(e){
+        $('afvState').textContent=(e?.message||'تشخیص مستقیم صدا انجام نشد.')+' در حال امتحان موتور جایگزین…';
+      }
+    }
     if(!window.ARIA_VOICE_ENGINE){
-      $('afvState').textContent='در حال آماده‌کردن موتور دقیق فارسی…';
       try{
         if(!document.querySelector('script[data-aria-voice-fast-engine]')){
           const s=document.createElement('script');s.src='./voice-engine.js?voicefast='+Date.now();s.dataset.ariaVoiceFastEngine='1';document.head.appendChild(s);
         }
-        for(let i=0;i<60&&!window.ARIA_VOICE_ENGINE;i++)await new Promise(r=>setTimeout(r,100));
+        for(let i=0;i<30&&!window.ARIA_VOICE_ENGINE;i++)await new Promise(r=>setTimeout(r,100));
       }catch(_){}
     }
-    if(window.ARIA_VOICE_ENGINE){
-      await startRecorderFallback();
-      return;
-    }
-    $('afvState').textContent='موتور دقیق فارسی آماده نشد؛ اینترنت را بررسی کن و دوباره بزن.';
+    if(window.ARIA_VOICE_ENGINE){await startRecorderFallback();return}
+    $('afvState').textContent='تشخیص صدا آماده نشد؛ دوباره بزن یا جمله را تایپ کن.';
     $('afvRetry').textContent='🎙 دوباره بگو';
   }
   function commit(){
