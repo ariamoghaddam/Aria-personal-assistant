@@ -315,16 +315,23 @@ function renderProjects(){
   return `<div class="project" onclick="currentProject='${p.id}';view='projects';render()"><b>${esc(p.name)}</b><small>${open} کار باز • ${p.area==='music'?'موسیقی':p.area==='work'?'کاری':p.area==='personal'?'شخصی':'عمومی'}</small>${p.desc?`<div class="desc">${esc(p.desc)}</div>`:''}</div>`
  }).join('')}</div></section>`+(currentProject?renderTasksSection('کارهای '+projectName(currentProject)):'');
 }
+let musicFilter='all';
+function musicGroup(type){musicFilter=type;render()}
+function editMusic(id){let x=db.music.find(v=>v.id===id);if(!x)return;musicForm.reset();musicForm.dataset.edit=id;musicType.value=x.type||'تمرین';musicTitle.value=x.title||'';musicDate.value=x.date||todayISO();musicDateFa.value=iso2j(musicDate.value);musicDuration.value=x.duration||'';musicNote.value=x.note||'';musicDialog.showModal()}
+function deleteMusic(id){if(confirm('این ثبت موسیقی حذف شود؟')){db.music=db.music.filter(x=>x.id!==id);save()}}
+window.musicGroup=musicGroup;window.editMusic=editMusic;window.deleteMusic=deleteMusic;
 function renderMusic(){
  let logs=[...db.music].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+ let filtered=musicFilter==='practice'?logs.filter(x=>x.type==='تمرین'):musicFilter==='performance'?logs.filter(x=>x.type==='اجرا'):musicFilter==='gear'?logs.filter(x=>['تجهیزات','ایده موسیقی','ست‌لیست'].includes(x.type)):logs;
+ const card=(key,title,count,icon)=>`<button class="musicCard" onclick="musicGroup('${key}')" style="text-align:right;cursor:pointer;border-color:${musicFilter===key?'var(--accent)':'var(--line)'}"><b>${icon} ${title}</b><div class="sub">${faN(count)} ثبت • برای مشاهده بزن</div></button>`;
  return `<section class="card section"><div class="sectionHead"><b>مرکز موسیقی</b><button onclick="openMusic()">＋ ثبت</button></div>
  <div class="musicCards">
-  <div class="musicCard"><b>تمرین‌ها</b><div class="sub">${logs.filter(x=>x.type==='تمرین').length} ثبت</div></div>
-  <div class="musicCard"><b>اجراها</b><div class="sub">${logs.filter(x=>x.type==='اجرا').length} ثبت</div></div>
-  <div class="musicCard"><b>تجهیزات / ایده‌ها</b><div class="sub">${logs.filter(x=>['تجهیزات','ایده موسیقی','ست‌لیست'].includes(x.type)).length} ثبت</div></div>
+  ${card('practice','تمرین‌ها',logs.filter(x=>x.type==='تمرین').length,'🥁')}
+  ${card('performance','اجراها',logs.filter(x=>x.type==='اجرا').length,'🎤')}
+  ${card('gear','تجهیزات / ایده‌ها',logs.filter(x=>['تجهیزات','ایده موسیقی','ست‌لیست'].includes(x.type)).length,'🎛️')}
  </div></section>
- <section class="card section"><div class="sectionHead"><b>آخرین ثبت‌های موسیقی</b></div>
- <div class="taskList">${logs.length?logs.map(x=>`<div class="task"><div class="taskTitle">${esc(x.title)}</div><div class="meta"><span class="badge violet">${esc(x.type)}</span><span class="badge">${esc(x.date||'')}</span>${x.duration?`<span class="badge">${esc(x.duration)}</span>`:''}</div>${x.note?`<div class="desc">${esc(x.note)}</div>`:''}</div>`).join(''):'<div class="empty">هنوز چیزی ثبت نشده.</div>'}</div></section>`+
+ <section class="card section"><div class="sectionHead"><b>${musicFilter==='practice'?'تمرین‌ها':musicFilter==='performance'?'اجراها':musicFilter==='gear'?'تجهیزات و ایده‌ها':'آخرین ثبت‌های موسیقی'}</b>${musicFilter!=='all'?'<button class="ghost" onclick="musicGroup(\'all\')">نمایش همه</button>':''}</div>
+ <div class="taskList">${filtered.length?filtered.map(x=>`<div class="task"><div class="taskTop"><div class="taskTitle">${esc(x.title)}</div><button onclick="editMusic('${x.id}')">ویرایش</button></div><div class="meta"><span class="badge violet">${esc(x.type)}</span><span class="badge">📅 ${x.date?iso2j(x.date):'بدون تاریخ'}</span>${x.duration?`<span class="badge">${esc(x.duration)}</span>`:''}</div>${x.note?`<div class="desc">${esc(x.note)}</div>`:''}<div class="actions"><button onclick="editMusic('${x.id}')">ویرایش</button><button class="danger" onclick="deleteMusic('${x.id}')">حذف</button></div></div>`).join(''):'<div class="empty">هنوز چیزی در این بخش ثبت نشده.</div>'}</div></section>`+
  renderMusicTasks();
 }
 function renderMusicTasks(){
@@ -394,8 +401,8 @@ window.setStatus=setStatus;window.toggleDone=toggleDone;window.smartPostpone=sma
 
 function openProject(){projectForm.reset();projectDialog.showModal()}window.openProject=openProject;
 projectForm.onsubmit=e=>{e.preventDefault();db.projects.push({id:uid(),name:projectName.value.trim(),area:projectArea.value,desc:projectDesc.value.trim()});save();projectDialog.close()}
-function openMusic(){musicForm.reset();musicDate.value=todayISO();musicDateFa.value=iso2j(musicDate.value);musicDialog.showModal()}window.openMusic=openMusic;
-musicForm.onsubmit=e=>{e.preventDefault();let iso=j2iso(musicDateFa.value);if(musicDateFa.value&&!iso){alert('تاریخ شمسی معتبر نیست');return}musicDate.value=iso;db.music.push({id:uid(),type:musicType.value,title:musicTitle.value.trim(),date:musicDate.value,duration:musicDuration.value.trim(),note:musicNote.value.trim()});save();musicDialog.close()}
+function openMusic(){musicForm.reset();delete musicForm.dataset.edit;musicDate.value=todayISO();musicDateFa.value=iso2j(musicDate.value);musicDialog.showModal()}window.openMusic=openMusic;
+musicForm.onsubmit=e=>{e.preventDefault();let iso=j2iso(musicDateFa.value);if(musicDateFa.value&&!iso){alert('تاریخ شمسی معتبر نیست');return}musicDate.value=iso;let id=musicForm.dataset.edit;let obj={id:id||uid(),type:musicType.value,title:musicTitle.value.trim(),date:musicDate.value,duration:musicDuration.value.trim(),note:musicNote.value.trim()};if(id){let i=db.music.findIndex(x=>x.id===id);if(i>=0)db.music[i]=obj}else db.music.push(obj);delete musicForm.dataset.edit;save();musicDialog.close()}
 
 backupBtn.onclick=()=>{let blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ARIA-backup-'+todayISO()+'.json';a.click();URL.revokeObjectURL(a.href)}
 restoreInput.onchange=async e=>{let f=e.target.files[0];if(!f)return;try{let d=JSON.parse(await f.text());if(d.projects&&d.tasks){db=d;save();alert('بازیابی شد')}}catch(err){alert('فایل معتبر نیست')}e.target.value=''}
